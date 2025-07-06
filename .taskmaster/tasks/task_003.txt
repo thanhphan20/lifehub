@@ -1,0 +1,12 @@
+# Task ID: 3
+# Title: Integrate Kafka producer with NestJS API Gateway
+# Status: pending
+# Dependencies: [2]
+# Priority: high
+# Description: Configure Kafka producer service to publish workout logs to 'workout-logs' topic when API receives requests
+
+# Details:
+Create KafkaService using kafkajs library with producer configuration. Set up bootstrap servers pointing to localhost:9092 with proper connection settings. Implement publishWorkoutLog method that adds timestamp to workout data and publishes to 'workout-logs' topic as JSON. Add error handling for Kafka connection failures with circuit breaker pattern. Implement retry logic with exponential backoff (max 3 retries). Add structured logging for successful/failed message publishing using NestJS Logger.
+
+# Test strategy:
+Mock Kafka producer to test service methods, verify messages are published to correct topic with proper JSON format including timestamp, test error handling when Kafka is unavailable, validate retry logic works correctly 

@@ -1,0 +1,42 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 🗂️ Project Task List
+
+## 📁 Project Setup
+- [ ] Initialize repository
+- [ ] Create project folder structure
+- [ ] Setup environment variables
+- [ ] Install dependencies
+
+## ⚙️ Core Features
+- [ ] Feature 1: Description
+- [ ] Feature 2: Description
+- [ ] Feature 3: Description
+
+## 🔌 Integrations
+- [ ] Setup Integration A
+- [ ] Setup Integration B
+- [ ] Test integration flow
+
+## 🧪 Testing
+- [ ] Write unit tests
+- [ ] Write integration tests
+- [ ] Run test coverage report
+
+## 🚀 Deployment
+- [ ] Prepare production config
+- [ ] Deploy to staging
+- [ ] Deploy to production
+
+## 📚 Documentation
+- [ ] Write README
+- [ ] Setup API docs
+- [ ] Add usage examples
+
+## 🔄 Maintenance
+- [ ] Setup linting/formatting
+- [ ] Add CI/CD workflows
+- [ ] Plan

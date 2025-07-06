@@ -1,0 +1,12 @@
+# Task ID: 2
+# Title: Scaffold NestJS API Gateway with workout logging endpoint
+# Status: pending
+# Dependencies: [1]
+# Priority: high
+# Description: Initialize NestJS application with proper project structure and implement POST /log/workout endpoint with validation
+
+# Details:
+Use @nestjs/cli to create new project 'api-gateway'. Install dependencies: @nestjs/microservices, @nestjs/config, class-validator, class-transformer, kafkajs. Create modules: AppModule, WorkoutModule, KafkaModule. Implement WorkoutController with POST /log/workout endpoint. Create WorkoutLogDto with validation decorators: @IsString() @IsNotEmpty() for type, @IsNumber() @Min(1) for sets/reps/weight. Configure global ValidationPipe and exception filters. Add Swagger/OpenAPI documentation with @ApiProperty decorators.
+
+# Test strategy:
+Test application starts without errors, validate endpoint accepts correct payload format and returns 201, test validation errors return 400 with proper error messages, verify Swagger documentation is generated correctly 

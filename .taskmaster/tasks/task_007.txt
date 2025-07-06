@@ -1,0 +1,12 @@
+# Task ID: 7
+# Title: Create environment configuration and .env.example files
+# Status: pending
+# Dependencies: [2, 4]
+# Priority: medium
+# Description: Set up comprehensive environment configuration with validation and example files for both services
+
+# Details:
+Create .env.example files for API Gateway (PORT=3000, KAFKA_BROKERS=localhost:9092, KAFKA_TOPIC=workout-logs, LOG_LEVEL=info) and Notion Consumer (KAFKA_BROKERS, KAFKA_TOPIC, KAFKA_GROUP_ID=notion-consumer-group, NOTION_TOKEN, NOTION_DATABASE_ID, LOG_LEVEL). Implement configuration validation using class-validator in NestJS and joi in Node.js consumer. Add startup validation to fail fast if required environment variables are missing. Create ConfigService for centralized configuration management. Document all environment variables with descriptions and example values.
+
+# Test strategy:
+Test applications start correctly with valid environment variables, verify startup fails gracefully with descriptive errors for missing variables, test configuration loading and validation logic 

@@ -1,0 +1,12 @@
+# Task ID: 8
+# Title: Implement end-to-end integration testing and monitoring
+# Status: pending
+# Dependencies: [6]
+# Priority: medium
+# Description: Create comprehensive end-to-end tests validating the complete workflow from API request to Notion database entry
+
+# Details:
+Set up test environment using Docker Compose with separate Kafka instance for testing. Create integration test suite that: sends workout log via API, verifies message appears in Kafka topic using consumer, confirms Notion database entry creation. Implement test data cleanup and isolation strategies. Add performance tests for API response times (<200ms) and end-to-end latency (<5s). Include load testing with multiple concurrent requests. Set up monitoring with custom metrics for message processing rates and error rates.
+
+# Test strategy:
+Run complete workflow tests in isolated environment, verify data consistency across all components, test error recovery scenarios, validate performance benchmarks are met, confirm monitoring metrics are accurate 

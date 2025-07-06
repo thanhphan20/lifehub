@@ -1,0 +1,451 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Set up Kafka infrastructure with Docker Compose in KRaft mode",
+        "description": "Configure and deploy Kafka cluster using Docker Compose with KRaft mode for local development environment",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "details": "Create docker-compose.yml file with confluentinc/cp-kafka:latest image configured in KRaft mode (no Zookeeper dependency). Set up single-node Kafka cluster with KAFKA_NODE_ID=1, KAFKA_PROCESS_ROLES=broker,controller, and KAFKA_CONTROLLER_QUORUM_VOTERS. Configure listeners for PLAINTEXT://localhost:9092 and CONTROLLER://localhost:9093. Pre-create 'workout-logs' topic with 3 partitions and replication factor 1. Include volume mounts for persistent data and proper cleanup policies. Add healthcheck and restart policies for reliability.",
+        "testStrategy": "Verify Kafka cluster starts successfully without errors, test topic creation using kafka-console-producer and kafka-console-consumer tools, validate message publishing and consumption works correctly, confirm KRaft mode is active (no Zookeeper dependency)",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Docker Compose configuration file",
+            "description": "Define Kafka, Zookeeper (if needed), and any other required services in a Docker Compose file.",
+            "dependencies": [],
+            "details": "Specify image versions, ports, volumes, and environment variables for each service. Include configurations for KRaft mode if applicable.\n<info added on 2025-06-24T02:59:47.248Z>\nCreated a Docker Compose configuration for a single-node Kafka cluster in KRaft mode (no Zookeeper). The configuration uses confluentinc/cp-kafka:latest, sets up KRaft mode with the required environment variables, exposes ports 9092 (broker) and 9093 (controller), and mounts persistent storage. Added a healthcheck to ensure Kafka is up, and a separate kafka-init service to pre-create the 'workout-logs' topic with 3 partitions and replication factor 1. The setup follows best practices for local development and reliability.\n</info added on 2025-06-24T02:59:47.248Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Configure and set up Kafka cluster in KRaft mode",
+            "description": "Configure Kafka brokers and controllers for KRaft mode and initialize the cluster.",
+            "dependencies": [
+              1
+            ],
+            "details": "Set necessary environment variables in the Docker Compose file for KRaft.  Initialize the KRaft cluster using appropriate Kafka CLI commands.\n<info added on 2025-06-24T02:52:59.483Z>\nConfigured docker-compose.yml to use confluentinc/cp-kafka:latest in KRaft mode. Set KAFKA_NODE_ID, KAFKA_PROCESS_ROLES, KAFKA_CONTROLLER_QUORUM_VOTERS, listeners, and persistent volume. Healthcheck and restart policy added. Pre-creates 'workout-logs' topic on startup. Next, will verify cluster initialization and ensure KRaft mode is active (no Zookeeper). Will test with kafka-topics CLI and check logs for KRaft startup confirmation.\n</info added on 2025-06-24T02:52:59.483Z>\n<info added on 2025-06-24T02:59:54.180Z>\nConfigured the Kafka cluster in KRaft mode by setting the required environment variables in the Docker Compose file: KAFKA_KRAFT_MODE, KAFKA_NODE_ID, KAFKA_PROCESS_ROLES, KAFKA_CONTROLLER_QUORUM_VOTERS, KAFKA_LISTENERS, KAFKA_ADVERTISED_LISTENERS, and KAFKA_CONTROLLER_LISTENER_NAMES. The cluster is initialized using the kafka-storage format command before starting the Kafka process, ensuring KRaft mode is active and no Zookeeper is used. The configuration is ready for local development and testing.\n</info added on 2025-06-24T02:59:54.180Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Create and configure Kafka topics",
+            "description": "Create Kafka topics with desired configurations (replication factor, partitions, etc.).",
+            "dependencies": [
+              2
+            ],
+            "details": "Use Kafka CLI tools or Kafka APIs to create topics. Define topic configurations based on requirements.\n<info added on 2025-06-24T03:03:44.889Z>\nThe docker-compose configuration creates the 'workout-logs' topic on startup using the kafka-topics CLI. The command is in the Kafka service's startup script, creating the topic with 3 partitions and a replication factor of 1. This ensures the topic is available for producers and consumers as soon as the cluster is healthy. Verify the topic's existence and configuration using the kafka-topics CLI.\n</info added on 2025-06-24T03:03:44.889Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement health checks and persistence",
+            "description": "Implement health checks for Kafka brokers and configure persistent storage.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Configure health check endpoints within the Docker Compose file. Configure persistent storage using volumes for Kafka data.\n<info added on 2025-06-24T04:08:48.985Z>\nVerified that the Docker Compose configuration includes a healthcheck for the Kafka broker using the kafka-topics CLI, which checks the broker's availability. Persistent storage is configured via the kafka-data Docker volume mounted to /var/lib/kafka/data, ensuring data durability across container restarts. These settings follow best practices for local development and reliability.\n</info added on 2025-06-24T04:08:48.985Z>",
+            "status": "done",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Scaffold NestJS API Gateway with workout logging endpoint",
+        "description": "Initialize NestJS application with proper project structure and implement POST /log/workout endpoint with validation",
+        "status": "done",
+        "dependencies": [
+          1
+        ],
+        "priority": "high",
+        "details": "Use @nestjs/cli to create new project 'api-gateway'. Install dependencies: @nestjs/microservices, @nestjs/config, class-validator, class-transformer, kafkajs. Create modules: AppModule, WorkoutModule, KafkaModule. Implement WorkoutController with POST /log/workout endpoint. Create WorkoutLogDto with validation decorators: @IsString() @IsNotEmpty() for type, @IsNumber() @Min(1) for sets/reps/weight. Configure global ValidationPipe and exception filters. Add Swagger/OpenAPI documentation with @ApiProperty decorators.",
+        "testStrategy": "Test application starts without errors, validate endpoint accepts correct payload format and returns 201, test validation errors return 400 with proper error messages, verify Swagger documentation is generated correctly",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Project initialization and dependency setup",
+            "description": "Initialize a new NestJS project using the CLI and install core dependencies required for the application.",
+            "dependencies": [],
+            "details": "Use 'nest new project-name' to create the project. Ensure core packages like @nestjs/core, @nestjs/common, @nestjs/platform-express are installed. Set up basic project structure.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Module and controller implementation with validation",
+            "description": "Generate a specific module, controller, and potentially a service. Implement request validation using DTOs and NestJS ValidationPipe.",
+            "dependencies": [
+              1
+            ],
+            "details": "Use 'nest g module', 'nest g controller', 'nest g service'. Define DTO classes with validation decorators (e.g., class-validator). Configure and apply the ValidationPipe.\n<info added on 2025-06-24T04:50:03.531Z>\nRefactored WorkoutController to use WorkoutLogDto with validation decorators and applied ValidationPipe. Created WorkoutLogDto with class-validator and Swagger decorators. Updated WorkoutService to accept the DTO and send messages to the correct Kafka topic. Installed dependencies: class-validator, class-transformer, @nestjs/swagger, swagger-ui-express, kafkajs. Module and controller now follow best practices for validation and type safety.\n</info added on 2025-06-24T04:50:03.531Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Swagger documentation and global configuration setup",
+            "description": "Integrate Swagger for API documentation and configure global settings such as pipes, interceptors, or guards in the main application file.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Install @nestjs/swagger and swagger-ui-express. Configure SwaggerModule in main.ts. Add Swagger decorators to controllers and DTOs. Set up global pipes (like ValidationPipe), interceptors, or guards in main.ts.\n<info added on 2025-06-24T04:50:31.194Z>\nConfigure SwaggerModule in main.ts. Add Swagger decorators to controllers and DTOs. Set up global pipes (like ValidationPipe), interceptors, or guards in main.ts.\n</info added on 2025-06-24T04:50:31.194Z>",
+            "status": "done",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Integrate Kafka producer with NestJS API Gateway",
+        "description": "Configure Kafka producer service to publish workout logs to 'workout-logs' topic when API receives requests",
+        "status": "done",
+        "dependencies": [
+          2
+        ],
+        "priority": "high",
+        "details": "Create KafkaService using kafkajs library with producer configuration. Set up bootstrap servers pointing to localhost:9092 with proper connection settings. Implement publishWorkoutLog method that adds timestamp to workout data and publishes to 'workout-logs' topic as JSON. Add error handling for Kafka connection failures with circuit breaker pattern. Implement retry logic with exponential backoff (max 3 retries). Add structured logging for successful/failed message publishing using NestJS Logger.",
+        "testStrategy": "Mock Kafka producer to test service methods, verify messages are published to correct topic with proper JSON format including timestamp, test error handling when Kafka is unavailable, validate retry logic works correctly",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement KafkaService with Producer Configuration",
+            "description": "Develop a KafkaService class to manage Kafka producer configuration, including connection details, serialization, and acknowledgment settings.",
+            "dependencies": [],
+            "details": "Configure Kafka producer properties (bootstrap servers, key/value serializers), create a Kafka producer instance, and define methods for sending messages.\n<info added on 2025-06-24T05:11:28.076Z>\nCreated a dedicated KafkaService in src/kafka/kafka.service.ts to manage Kafka producer configuration, connection, and message publishing using kafkajs. Refactored WorkoutService to delegate Kafka logic to KafkaService. Registered KafkaService as a provider in both AppModule and WorkoutModule for dependency injection. The service uses a singleton pattern for the producer connection and includes error handling and logging. This completes the subtask for implementing KafkaService with producer configuration.\n</info added on 2025-06-24T05:11:28.076Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Message Publishing Logic with JSON Serialization",
+            "description": "Implement the logic for publishing messages to Kafka topics, including JSON serialization of message payloads.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create methods to serialize messages to JSON format, specify the Kafka topic, and send messages using the Kafka producer.\n<info added on 2025-06-24T05:13:16.874Z>\nImplemented message publishing logic in KafkaService. All messages are serialized to JSON before being sent to the specified Kafka topic. The WorkoutService delegates publishing to KafkaService, ensuring consistent serialization and topic usage. Logging and error handling are included. This completes the subtask for message publishing logic with JSON serialization.\n</info added on 2025-06-24T05:13:16.874Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement Error Handling and Circuit Breaker Pattern",
+            "description": "Implement error handling mechanisms and integrate a circuit breaker pattern to handle Kafka connection and publishing failures.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Implement try-catch blocks, exception handling for Kafka-related errors, and integrate a circuit breaker library (e.g., Resilience4j) to prevent cascading failures.\n<info added on 2025-06-24T05:13:43.530Z>\nEnhanced KafkaService with a basic circuit breaker pattern for error handling. If publishing fails more than 3 times in a row, the circuit opens and further sends are rejected for 30 seconds. Circuit breaker state changes are logged, and the failure count resets on success. This prevents cascading failures and improves reliability when Kafka is unavailable.\n</info added on 2025-06-24T05:13:43.530Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement Retry Logic and Structured Logging",
+            "description": "Implement retry logic for message publishing failures and integrate structured logging for detailed error tracking and monitoring.",
+            "dependencies": [
+              3
+            ],
+            "details": "Implement retry mechanisms with exponential backoff, configure structured logging (e.g., using Logback or SLF4J) to log relevant information, including timestamps, message IDs, and error details.\n<info added on 2025-06-24T05:14:08.834Z>\nAdded retry logic with exponential backoff to KafkaService's publish method. On failure, the service retries up to 3 times with increasing delays (100ms, 500ms, 1000ms). Each attempt and final failure is logged with structured messages. Circuit breaker logic remains in place to prevent cascading failures. This completes the subtask for implementing retry logic and structured logging.\n</info added on 2025-06-24T05:14:08.834Z>",
+            "status": "done",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Scaffold Node.js Notion Consumer service",
+        "description": "Create standalone Node.js application that consumes workout logs from Kafka with proper consumer group configuration",
+        "status": "done",
+        "dependencies": [
+          1
+        ],
+        "priority": "medium",
+        "details": "Initialize Node.js project 'notion-consumer' with package.json including dependencies: kafkajs, @notionhq/client, dotenv, winston for logging. Create main consumer application with consumer group 'notion-consumer-group' consuming from 'workout-logs' topic. Implement message deserialization and basic validation. Configure auto-commit with proper offset management. Add graceful shutdown handling for SIGINT/SIGTERM with proper consumer disconnection. Set up structured logging with winston including timestamp and log levels.",
+        "testStrategy": "Test consumer connects to Kafka successfully and joins consumer group, verify it receives messages and processes them without errors, test graceful shutdown scenarios, validate logging output is structured and informative",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up Node.js project",
+            "description": "Initialize a new Node.js project, install necessary dependencies (e.g., Kafka client, logging library), and configure the project structure.",
+            "dependencies": [],
+            "details": "Create package.json, install dependencies, and configure basic project structure.\n<info added on 2025-06-24T06:36:26.523Z>\nInitialized the Node.js Notion Consumer project in the notion-cosumer directory. Created package.json and installed all required dependencies: kafkajs, @notionhq/client, dotenv, and winston for structured logging. The project structure is ready for implementing the Kafka consumer logic.\n</info added on 2025-06-24T06:36:26.523Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Kafka consumer",
+            "description": "Implement the Kafka consumer logic, including connecting to the Kafka brokers, subscribing to topics, handling messages, and managing consumer groups.",
+            "dependencies": [
+              1
+            ],
+            "details": "Configure Kafka client, subscribe to topics, implement message handling logic, and ensure proper consumer group management for fault tolerance and scalability.\n<info added on 2025-06-24T06:49:46.628Z>\nImplemented Kafka consumer logic in index.js using kafkajs. The consumer connects to the 'workout-logs' topic with the 'notion-consumer-group', deserializes and validates messages, and logs all activity using winston. Graceful shutdown handlers for SIGINT and SIGTERM are included, ensuring proper resource cleanup and structured logging. The subtask for implementing the Kafka consumer is complete.\n</info added on 2025-06-24T06:49:46.628Z>\n<info added on 2025-06-24T06:55:23.806Z>\nThe implementation includes structured logging and error handling for message processing.\n</info added on 2025-06-24T06:55:23.806Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement graceful shutdown and logging",
+            "description": "Implement graceful shutdown procedures to handle termination signals, and set up structured logging for monitoring and debugging.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Implement signal handlers for graceful shutdown, ensure proper resource cleanup, and configure structured logging with relevant information.\n<info added on 2025-06-24T06:50:26.243Z>\nThe consumer handles SIGINT and SIGTERM signals, disconnects cleanly, and logs shutdown events using winston. All message processing, errors, and shutdowns are logged with timestamps and log levels for monitoring and debugging. This completes the subtask for graceful shutdown and logging.\n</info added on 2025-06-24T06:50:26.243Z>\n<info added on 2025-06-24T06:55:36.843Z>\n</info added on 2025-06-24T06:50:26.243Z>\n</info added on 2025-06-24T06:55:36.843Z>",
+            "status": "done",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Implement Notion API integration for database operations",
+        "description": "Integrate Notion API client to create database entries from consumed workout logs with proper error handling",
+        "status": "done",
+        "dependencies": [
+          4
+        ],
+        "priority": "high",
+        "details": "Set up @notionhq/client with integration token and database ID from environment variables. Create Notion database schema with properties: Type (title/rich_text), Sets (number), Reps (number), Weight (number), Timestamp (date). Implement createWorkoutEntry function mapping workout log data to Notion page properties format. Add error handling for API rate limits (429 responses) with exponential backoff retry (max 5 retries). Implement basic idempotency using timestamp + workout data hash to prevent duplicates. Add comprehensive logging for API interactions.",
+        "testStrategy": "Test Notion API connection with valid credentials and database access, verify database entries are created with correct property mappings, test rate limiting handling and retry logic, validate duplicate entry prevention works correctly",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Notion Client Setup and Database Schema Configuration",
+            "description": "Set up the Notion client and configure the database schema to store the required data.",
+            "dependencies": [],
+            "details": "This involves authenticating with the Notion API, creating or identifying the target database, and defining the necessary properties and data types within the database schema.\n<info added on 2025-06-24T07:21:50.162Z>\nNotion client setup and database schema validation are implemented. The service authenticates with Notion, retrieves the database schema, and validates that all required properties (Name, Sets, Reps, Weight, Date) exist. Logs success or exits on error.\n</info added on 2025-06-24T07:21:50.162Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Data Mapping and Entry Creation Logic",
+            "description": "Implement the logic to map data from the source to the Notion database and create new entries.",
+            "dependencies": [
+              1
+            ],
+            "details": "This includes defining the data mapping rules, handling data transformations, and writing the code to create new entries in the Notion database based on the mapped data.\n<info added on 2025-06-24T07:22:48.203Z>\nRefactored the Notion Consumer to use a createWorkoutEntry function that maps workout log data to Notion page properties and creates entries in the database. Each entry creation is logged for success and errors. The function is used in the Kafka consumer message handler, ensuring all valid logs are mapped and stored in Notion.\n</info added on 2025-06-24T07:22:48.203Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Rate Limiting and Retry Mechanism Implementation",
+            "description": "Implement rate limiting and retry mechanisms to handle potential API rate limits.",
+            "dependencies": [
+              2
+            ],
+            "details": "This involves monitoring API usage, implementing retry logic with exponential backoff, and handling rate limit errors gracefully.\n<info added on 2025-06-24T07:57:57.921Z>\nAdded retry logic with exponential backoff to createWorkoutEntry. If Notion API returns a 429 (rate limit), the function retries up to 5 times with increasing delays (500ms, 1s, 2s, 4s, 8s). Each retry and final failure is logged. Throws error if all retries fail. This ensures robust handling of Notion API rate limits.\n</info added on 2025-06-24T07:57:57.921Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Idempotency and Duplicate Prevention Logic",
+            "description": "Implement logic to ensure idempotency and prevent duplicate entries in the Notion database.",
+            "dependencies": [
+              2
+            ],
+            "details": "This includes implementing mechanisms to identify existing entries, prevent duplicate creations, and ensure that operations can be safely retried without unintended side effects.\n<info added on 2025-06-24T10:09:49.355Z>\nAdded idempotency and duplicate prevention logic to createWorkoutEntry. Before creating a new entry, the function queries the Notion database for an existing entry with the same type, sets, reps, weight, and today's date. If a duplicate is found, it logs and skips creation. Otherwise, it proceeds with entry creation and retry logic. This ensures no duplicate entries are created for the same workout log on the same day.\n</info added on 2025-06-24T10:09:49.355Z>",
+            "status": "done",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Add comprehensive input validation and error handling",
+        "description": "Implement robust validation, error handling, and logging across both API Gateway and Notion Consumer services",
+        "status": "done",
+        "dependencies": [
+          3,
+          5
+        ],
+        "priority": "medium",
+        "details": "Enhance API Gateway with global exception filter for consistent error responses, add request/response interceptors for logging. Implement health check endpoint GET /health for monitoring. In Notion Consumer, add message schema validation before processing, handle malformed JSON gracefully, implement dead letter pattern for failed messages after max retries. Add structured error logging with correlation IDs. Configure log levels and output formats for production deployment. Implement timeout handling for all external API calls.",
+        "testStrategy": "Test various error scenarios: invalid payloads, Kafka downtime, Notion API failures, network timeouts. Verify error responses are consistent and informative, validate logs contain sufficient debugging information, test health check endpoints respond correctly",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement API Gateway global exception filters and interceptors",
+            "description": "Develop filters and interceptors to handle exceptions globally within the API Gateway.",
+            "dependencies": [],
+            "details": "Implement exception handling for various error scenarios (e.g., authentication failures, invalid requests). Implement interceptors for request/response logging and security.\n<info added on 2025-06-24T10:12:25.609Z>\nImplemented a global HttpExceptionFilter to catch and log all exceptions, returning a consistent error response structure. Added a LoggingInterceptor to log incoming requests and outgoing responses with method, URL, status code, and response time. Both are registered globally in AppModule for the API Gateway. Installed @types/express to resolve type errors.\n</info added on 2025-06-24T10:12:25.609Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Health Check Endpoint",
+            "description": "Create a health check endpoint to monitor the API's availability.",
+            "dependencies": [],
+            "details": "Develop an endpoint that checks the status of critical dependencies (e.g., database, external APIs). Return appropriate HTTP status codes based on the health check results.\n<info added on 2025-06-24T10:14:30.219Z>\nImplemented a HealthController with a GET /health endpoint in the API Gateway. The endpoint returns { status: 'ok', timestamp: <ISO string> } with HTTP 200. HealthController is registered in AppModule. This provides a simple health check for monitoring the API's availability.\n</info added on 2025-06-24T10:14:30.219Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement Consumer Message Validation and Dead Letter Handling",
+            "description": "Validate consumer messages and implement dead letter queue (DLQ) handling.",
+            "dependencies": [],
+            "details": "Validate incoming messages against defined schemas. Implement a DLQ to handle messages that fail validation or processing. Configure retry mechanisms.\n<info added on 2025-06-24T10:15:26.331Z>\nAdded message schema validation and dead letter handling to the Notion Consumer. Messages failing validation or processing after all retries are written to a local dead-letter queue file (dead-letter.jsonl) with error info and timestamp. All DLQ events are logged. A validateWorkoutLog function is used for schema validation, and malformed JSON is also handled and sent to the DLQ.\n</info added on 2025-06-24T10:15:26.331Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement Structured Logging with Correlation IDs",
+            "description": "Implement structured logging with correlation IDs for tracing requests.",
+            "dependencies": [],
+            "details": "Use a structured logging format (e.g., JSON). Include correlation IDs to trace requests across services. Log relevant information (e.g., request details, errors).",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement Timeout Handling for External API Calls",
+            "description": "Implement timeout handling for external API calls to prevent indefinite blocking.",
+            "dependencies": [],
+            "details": "Set appropriate timeouts for external API calls. Implement retry mechanisms with exponential backoff. Handle timeout exceptions gracefully.",
+            "status": "done",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Create environment configuration and .env.example files",
+        "description": "Set up comprehensive environment configuration with validation and example files for both services",
+        "status": "pending",
+        "dependencies": [
+          2,
+          4
+        ],
+        "priority": "medium",
+        "details": "Create .env.example files for API Gateway (PORT=3000, KAFKA_BROKERS=localhost:9092, KAFKA_TOPIC=workout-logs, LOG_LEVEL=info) and Notion Consumer (KAFKA_BROKERS, KAFKA_TOPIC, KAFKA_GROUP_ID=notion-consumer-group, NOTION_TOKEN, NOTION_DATABASE_ID, LOG_LEVEL). Implement configuration validation using class-validator in NestJS and joi in Node.js consumer. Add startup validation to fail fast if required environment variables are missing. Create ConfigService for centralized configuration management. Document all environment variables with descriptions and example values.",
+        "testStrategy": "Test applications start correctly with valid environment variables, verify startup fails gracefully with descriptive errors for missing variables, test configuration loading and validation logic"
+      },
+      {
+        "id": 8,
+        "title": "Implement end-to-end integration testing and monitoring",
+        "description": "Create comprehensive end-to-end tests validating the complete workflow from API request to Notion database entry",
+        "status": "in-progress",
+        "dependencies": [
+          6
+        ],
+        "priority": "medium",
+        "details": "Set up test environment using Docker Compose with separate Kafka instance for testing. Create integration test suite that: sends workout log via API, verifies message appears in Kafka topic using consumer, confirms Notion database entry creation. Implement test data cleanup and isolation strategies. Add performance tests for API response times (<200ms) and end-to-end latency (<5s). Include load testing with multiple concurrent requests. Set up monitoring with custom metrics for message processing rates and error rates.",
+        "testStrategy": "Run complete workflow tests in isolated environment, verify data consistency across all components, test error recovery scenarios, validate performance benchmarks are met, confirm monitoring metrics are accurate",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Test environment setup with Docker Compose",
+            "description": "Configure Docker Compose for a consistent and isolated test environment.",
+            "dependencies": [],
+            "details": "Define services, networks, and volumes for the test environment. Include database, message queue, and other required dependencies.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "End-to-end workflow test implementation",
+            "description": "Develop tests to validate the complete workflow from start to finish.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement test cases covering various user scenarios and data flows. Verify data integrity and system behavior across all components.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Test data cleanup and isolation strategies",
+            "description": "Implement strategies to ensure test data is properly cleaned up and tests are isolated.",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement strategies like database transactions, unique test data generation, and data deletion after each test run.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Performance and load testing implementation",
+            "description": "Implement performance and load tests to assess system scalability and responsiveness.",
+            "dependencies": [
+              2
+            ],
+            "details": "Use tools to simulate user load and measure response times, throughput, and resource utilization. Define performance benchmarks.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Custom metrics and monitoring setup",
+            "description": "Set up custom metrics and monitoring to track system health and performance.",
+            "dependencies": [
+              4
+            ],
+            "details": "Integrate monitoring tools to collect and visualize key metrics. Define alerts for critical events and performance degradation.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Error recovery scenario testing",
+            "description": "Test the system's ability to handle and recover from errors.",
+            "dependencies": [
+              2
+            ],
+            "details": "Simulate various failure scenarios (e.g., network outages, database errors) and verify the system's resilience and error handling mechanisms.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Create comprehensive documentation and developer guides",
+        "description": "Develop detailed documentation including setup instructions, API documentation, architecture overview, and troubleshooting guides",
+        "status": "pending",
+        "dependencies": [
+          7
+        ],
+        "priority": "low",
+        "details": "Create comprehensive README.md with project overview, architecture diagram, and quick start guide. Document prerequisites: Node.js >=16, Docker, Docker Compose, Notion account. Provide step-by-step setup instructions including Notion integration creation and database setup. Generate OpenAPI/Swagger documentation for REST API. Include sample curl commands and Postman collection. Create troubleshooting section covering common issues: Kafka connection problems, Notion API errors, environment configuration. Add architecture diagrams showing data flow and component interactions.",
+        "testStrategy": "Validate setup instructions by following them on clean environment, test all sample requests work correctly, verify API documentation is accurate and complete, ensure troubleshooting guides resolve common issues"
+      },
+      {
+        "id": 10,
+        "title": "Optimize deployment configuration and production readiness",
+        "description": "Configure production deployment settings, Docker optimization, and operational monitoring for both services",
+        "status": "pending",
+        "dependencies": [
+          8,
+          9
+        ],
+        "priority": "low",
+        "details": "Create optimized Dockerfiles for both services using multi-stage builds and minimal base images (node:18-alpine). Configure production docker-compose.yml with resource limits, restart policies, and health checks. Implement graceful shutdown handling with proper cleanup of Kafka connections and in-flight requests. Add prometheus metrics endpoints for monitoring message throughput, API response times, and error rates. Configure log aggregation with JSON formatting for centralized logging. Set up environment-specific configurations for development, staging, and production.",
+        "testStrategy": "Test Docker builds create optimized images with minimal attack surface, verify production configuration handles load and failures gracefully, validate monitoring endpoints provide useful metrics, test deployment in containerized environment"
+      }
+    ],
+    "metadata": {
+      "projectName": "LifeHub Activity Logging System",
+      "totalTasks": 10,
+      "sourceFile": "./scripts/PRD.txt",
+      "generatedAt": "2025-06-23",
+      "created": "2025-06-23T15:40:41.404Z",
+      "description": "Tasks for master context",
+      "updated": "2025-06-24T10:55:44.917Z"
+    }
+  }
+}

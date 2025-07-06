@@ -1,0 +1,12 @@
+# Task ID: 1
+# Title: Set up Kafka infrastructure with Docker Compose in KRaft mode
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Configure and deploy Kafka cluster using Docker Compose with KRaft mode for local development environment
+
+# Details:
+Create docker-compose.yml file with confluentinc/cp-kafka:latest image configured in KRaft mode (no Zookeeper dependency). Set up single-node Kafka cluster with KAFKA_NODE_ID=1, KAFKA_PROCESS_ROLES=broker,controller, and KAFKA_CONTROLLER_QUORUM_VOTERS. Configure listeners for PLAINTEXT://localhost:9092 and CONTROLLER://localhost:9093. Pre-create 'workout-logs' topic with 3 partitions and replication factor 1. Include volume mounts for persistent data and proper cleanup policies. Add healthcheck and restart policies for reliability.
+
+# Test strategy:
+Verify Kafka cluster starts successfully without errors, test topic creation using kafka-console-producer and kafka-console-consumer tools, validate message publishing and consumption works correctly, confirm KRaft mode is active (no Zookeeper dependency) 
