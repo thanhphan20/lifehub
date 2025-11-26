@@ -8,7 +8,7 @@ const path = require('path');
 
 const kafka = new Kafka({
   clientId: 'notion-consumer',
-  brokers: [process.env.KAFKA_BROKER || 'localhost:9092'],
+  brokers: [process.env.KAFKA_BROKER || 'localhost:9094'],
 });
 
 const consumer = kafka.consumer({ groupId: 'notion-consumer-group' });

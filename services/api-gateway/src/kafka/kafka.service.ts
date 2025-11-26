@@ -1,13 +1,23 @@
 import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { Kafka, Producer, Message } from "kafkajs";
 import { v4 as uuidv4 } from "uuid";
 
 @Injectable()
 export class KafkaService {
   private readonly logger = new Logger(KafkaService.name);
-  private readonly kafka = new Kafka({ brokers: ["localhost:9092"] });
+  private readonly kafka: Kafka;
   private producer: Producer | null = null;
   private isConnected = false;
+
+  constructor(private readonly configService: ConfigService) {
+    const kafkaBroker = this.configService.get<string>("KAFKA_BROKER") || "localhost:9094";
+    this.kafka = new Kafka({
+      clientId: "api-gateway",
+      brokers: [kafkaBroker],
+    });
+    this.logger.log(`KafkaService initialized with broker: ${kafkaBroker}`);
+  }
 
   // Circuit breaker state
   private failureCount = 0;

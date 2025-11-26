@@ -1,0 +1,21 @@
+{
+  "name": "notion-cosumer",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Kafka consumer service for processing workout logs and storing them in Notion",
+  "dependencies": {
+    "@notionhq/client": "^3.1.3",
+    "dotenv": "^16.5.0",
+    "kafkajs": "^2.2.4",
+    "uuid": "^11.1.0",
+    "winston": "^3.17.0"
+  }
+}

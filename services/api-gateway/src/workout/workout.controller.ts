@@ -1,4 +1,5 @@
-import { Controller, Post, Body, UsePipes, ValidationPipe } from "@nestjs/common";
+import { Controller, Post, Body, Req, HttpCode, HttpStatus } from "@nestjs/common";
+import { Request } from "express";
 import { WorkoutService } from "./workout.service";
 import { WorkoutLogDto } from "./workout-log.dto";
 
@@ -7,8 +8,13 @@ export class WorkoutController {
   constructor(private readonly workoutService: WorkoutService) {}
 
   @Post("workout")
-  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
-  logWorkout(@Body() workoutLogDto: WorkoutLogDto) {
-    return this.workoutService.logWorkout(workoutLogDto);
+  @HttpCode(HttpStatus.ACCEPTED)
+  async logWorkout(@Body() workoutLogDto: WorkoutLogDto, @Req() req: Request) {
+    const correlationId = (req.headers["x-correlation-id"] as string) || undefined;
+    await this.workoutService.logWorkout(workoutLogDto, correlationId);
+    return {
+      message: "Workout log accepted",
+      correlationId: correlationId || null,
+    };
   }
 }

@@ -1,6 +1,4 @@
-import { Injectable, Logger, Inject, Scope } from "@nestjs/common";
-import { REQUEST } from "@nestjs/core";
-import { Request } from "express";
+import { Injectable, Logger } from "@nestjs/common";
 import { WorkoutLogDto } from "./workout-log.dto";
 import { KafkaService } from "../kafka/kafka.service";
 
@@ -8,15 +6,15 @@ import { KafkaService } from "../kafka/kafka.service";
 export class WorkoutService {
   private readonly logger = new Logger(WorkoutService.name);
 
-  constructor(private readonly kafkaService: KafkaService, @Inject(REQUEST) private readonly request: Request) {}
+  constructor(private readonly kafkaService: KafkaService) {}
 
   /**
    * Logs a workout and publishes it to Kafka with correlation ID for traceability.
    * @param workoutLogDto - The workout log data transfer object.
+   * @param correlationId - Optional correlation ID from request headers.
    */
-  async logWorkout(workoutLogDto: WorkoutLogDto): Promise<void> {
-    const correlationId = this.request.headers["x-correlation-id"] as string;
+  async logWorkout(workoutLogDto: WorkoutLogDto, correlationId?: string): Promise<void> {
     await this.kafkaService.publish("workout-logs", workoutLogDto, correlationId);
-    this.logger.log("Workout log published to Kafka", { correlationId });
+    this.logger.log("Workout log published to Kafka", { correlationId: correlationId || "none" });
   }
 }
