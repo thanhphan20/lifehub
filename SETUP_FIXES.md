@@ -5,8 +5,10 @@ This document summarizes all the fixes applied to make the LifeHub project runna
 ## Issues Fixed
 
 ### 1. API Gateway Package Dependencies
+
 **Problem**: Missing essential NestJS dependencies in `package.json`
 **Solution**: Added all required dependencies including:
+
 - `@nestjs/common`, `@nestjs/core`, `@nestjs/config`
 - `@nestjs/cli`, `@nestjs/schematics`, `@nestjs/testing`
 - `reflect-metadata`, `rxjs`
@@ -15,49 +17,62 @@ This document summarizes all the fixes applied to make the LifeHub project runna
 - Development dependencies (typescript, eslint, prettier)
 
 ### 2. Kafka Broker Configuration
+
 **Problem**: Hardcoded Kafka broker address (`localhost:9092`) which doesn't match Docker setup
-**Solution**: 
+**Solution**:
+
 - Updated `KafkaService` to use `ConfigService` for environment-based configuration
 - Default broker changed to `localhost:9094` (host-accessible port from Docker)
 - Added support for environment variable `KAFKA_BROKER`
 - Updated `notion-consumer` to use `localhost:9094` as default
 
 ### 3. Configuration Management
+
 **Problem**: No proper configuration management for environment variables
 **Solution**:
+
 - Added `@nestjs/config` module to API Gateway
 - Created `ConfigModule` as global module in `AppModule`
 - Updated `main.ts` to use `ConfigService` for port configuration
 - Created `ENV.example` files for both services
 
 ### 4. Module Architecture
+
 **Problem**: `KafkaService` was provided in multiple modules causing potential issues
 **Solution**:
+
 - Created dedicated `KafkaModule` as a global module
 - Removed duplicate `KafkaService` provider from `WorkoutModule`
 - Properly exported `KafkaService` from `KafkaModule`
 
 ### 5. Service Scope Issues
+
 **Problem**: `WorkoutService` was using `REQUEST` scope without proper configuration
 **Solution**:
+
 - Removed `REQUEST` scope dependency from `WorkoutService`
 - Updated `WorkoutController` to extract correlation ID from request headers
 - Pass correlation ID as parameter to service method
 
 ### 6. Missing Configuration Files
+
 **Problem**: Missing `nest-cli.json` for NestJS CLI
 **Solution**: Created `nest-cli.json` with proper configuration
 
 ### 7. Notion Consumer Improvements
+
 **Problem**: Missing start script and uuid dependency
 **Solution**:
+
 - Added `start` and `dev` scripts to `package.json`
 - Added `uuid` dependency
 - Updated default Kafka broker to `localhost:9094`
 
 ### 8. Documentation
+
 **Problem**: Outdated and incomplete README
 **Solution**:
+
 - Completely rewrote README with comprehensive setup instructions
 - Added troubleshooting section
 - Added configuration details
@@ -67,6 +82,7 @@ This document summarizes all the fixes applied to make the LifeHub project runna
 ## Files Created/Modified
 
 ### Created
+
 - `services/api-gateway/nest-cli.json`
 - `services/api-gateway/src/kafka/kafka.module.ts`
 - `services/api-gateway/ENV.example`
@@ -75,6 +91,7 @@ This document summarizes all the fixes applied to make the LifeHub project runna
 - `SETUP_FIXES.md` (this file)
 
 ### Modified
+
 - `services/api-gateway/package.json`
 - `services/api-gateway/src/app.module.ts`
 - `services/api-gateway/src/main.ts`
@@ -119,6 +136,3 @@ curl -X POST http://localhost:3000/log/workout \
 ## Known Issues
 
 None at this time. The project should now be fully runnable.
-
-
-

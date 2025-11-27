@@ -1,6 +1,13 @@
-# LifeHub - Kafka + NestJS + Notion Integration
+# LifeHub - Hybrid Microservices Architecture
 
-LifeHub is a real-time logging system that allows you to track workouts (and other activities) through a NestJS API, push logs into Kafka, and then persist those logs into Notion via a Kafka consumer.
+LifeHub is a real-time logging system that allows you to track workouts (and other activities) through a hybrid NestJS API gateway. It uses:
+
+- **PostgreSQL + Prisma** for persistent storage (source of truth)
+- **Kafka** for event streaming and high-throughput message processing
+- **RabbitMQ** for reliable task processing with guaranteed delivery and retries
+- **Notion** integration for external data synchronization
+
+This architecture provides a robust, scalable solution with both HTTP REST API and microservices support.
 
 ---
 
@@ -9,9 +16,15 @@ LifeHub is a real-time logging system that allows you to track workouts (and oth
 ```
 lifehub/
 ├── services/
-│   ├── api-gateway/               # NestJS API producer (log -> Kafka)
-│   └── notion-consumer/            # Node.js Kafka consumer (logs -> Notion)
-├── docker-compose.yml             # Kafka Docker setup
+│   ├── api-gateway/               # NestJS hybrid app (HTTP + microservices)
+│   │   ├── prisma/                # Prisma schema and migrations
+│   │   └── src/
+│   │       ├── prisma/            # Prisma service and module
+│   │       ├── kafka/             # Kafka integration
+│   │       ├── rabbitmq/          # RabbitMQ integration
+│   │       └── workout/           # Workout domain
+│   └── notion-consumer/           # Node.js consumer (logs -> Notion)
+├── docker-compose.yml             # Infrastructure setup (PostgreSQL, Kafka, RabbitMQ)
 ├── README.md
 └── package.json
 ```
@@ -40,14 +53,15 @@ lifehub/
 
 ### Manual Setup
 
-#### 1. Start Kafka
+#### 1. Start Infrastructure Services
 
 ```bash
-# Start Kafka in Docker
+# Start PostgreSQL, Kafka, and RabbitMQ in Docker
 docker-compose up -d
 
-# Wait for Kafka to be ready (about 30 seconds)
-# You can check logs with: docker-compose logs -f kafka
+# Wait for services to be ready (about 30 seconds)
+# Check status with: docker-compose ps
+# View logs with: docker-compose logs -f [service-name]
 ```
 
 #### 2. Setup API Gateway
@@ -58,11 +72,22 @@ cd services/api-gateway
 # Install dependencies
 npm install
 
-# Create .env file (optional, defaults work for local development)
+# Create .env file from example
 cp ENV.example .env
-# Edit .env if needed:
+# The defaults work for local development, but you can customize:
+# DATABASE_URL=postgresql://lifehub:lifehub_password@localhost:5432/lifehub
 # KAFKA_BROKER=localhost:9094
+# RABBITMQ_URL=amqp://lifehub:lifehub_password@localhost:5672
 # PORT=3000
+
+# Generate Prisma Client
+npm run prisma:generate
+
+# Run database migrations
+npm run prisma:migrate
+
+# (Optional) Seed database
+npm run prisma:seed
 
 # Start the API Gateway
 npm run start:dev
@@ -70,9 +95,10 @@ npm run start:dev
 
 The API Gateway will be available at:
 
-- API: http://localhost:3000
-- Health Check: http://localhost:3000/health
-- Swagger Docs: http://localhost:3000/api
+- **API**: http://localhost:3000
+- **Health Check**: http://localhost:3000/health
+- **Swagger Docs**: http://localhost:3000/api
+- **RabbitMQ Management**: http://localhost:15672 (user: `lifehub`, pass: `lifehub_password`)
 
 #### 3. Setup Notion Consumer
 
@@ -96,8 +122,8 @@ npm start
 ### 4. Test the System
 
 ```bash
-# Send a workout log
-curl -X POST http://localhost:3000/log/workout \
+# Create a workout log (saves to DB, publishes to Kafka & RabbitMQ)
+curl -X POST http://localhost:3000/workouts \
   -H "Content-Type: application/json" \
   -d '{
     "type": "Deadlift",
@@ -106,11 +132,22 @@ curl -X POST http://localhost:3000/log/workout \
     "weight": 120
   }'
 
+# Get all workout logs (from PostgreSQL)
+curl http://localhost:3000/workouts?limit=10&offset=0
+
+# Get a specific workout log
+curl http://localhost:3000/workouts/{workout-id}
+
 # Check health
 curl http://localhost:3000/health
 ```
 
-If setup correctly, the data should appear as a new row in your Notion database.
+If setup correctly:
+
+1. The workout log will be saved to PostgreSQL
+2. An event will be published to Kafka (for analytics/indexing)
+3. A task will be queued in RabbitMQ (for Notion sync with retries)
+4. The data should appear in your Notion database via the consumer
 
 ---
 
@@ -121,8 +158,17 @@ If setup correctly, the data should appear as a new row in your Notion database.
 #### API Gateway (`services/api-gateway/.env`)
 
 ```env
-KAFKA_BROKER=localhost:9094
+# Server
 PORT=3000
+
+# Database
+DATABASE_URL=postgresql://lifehub:lifehub_password@localhost:5432/lifehub?schema=public
+
+# Kafka (event streaming)
+KAFKA_BROKER=localhost:9094
+
+# RabbitMQ (task processing)
+RABBITMQ_URL=amqp://lifehub:lifehub_password@localhost:5672
 ```
 
 #### Notion Consumer (`services/notion-cosumer/.env`)
@@ -133,10 +179,26 @@ NOTION_TOKEN=your_notion_integration_token
 NOTION_DB_ID=your_notion_database_id
 ```
 
-### Kafka Broker Address
+### Message Broker Configuration
+
+**Kafka** (Event Streaming):
 
 - **Local Development**: Use `localhost:9094` (host-accessible port)
 - **Docker Network**: Use `kafka:9092` (internal Docker network)
+- Used for: High-throughput event streaming, analytics, multiple consumers
+
+**RabbitMQ** (Task Processing):
+
+- **Local Development**: Use `amqp://lifehub:lifehub_password@localhost:5672`
+- **Docker Network**: Use `amqp://lifehub:lifehub_password@rabbitmq:5672`
+- Used for: Reliable task processing, guaranteed delivery, retry mechanisms
+
+### Architecture Strategy
+
+- **PostgreSQL**: Source of truth for all workout logs
+- **Kafka**: Event streaming for analytics, indexing, and multiple consumers (fire-and-forget style)
+- **RabbitMQ**: Reliable task queue for Notion synchronization with retries and guaranteed delivery
+- **Hybrid NestJS**: Supports both HTTP REST API and microservices (RabbitMQ) simultaneously
 
 ---
 
@@ -178,6 +240,12 @@ npm run start:prod
 
 # Tests
 npm test
+
+# Prisma Commands
+npm run prisma:generate    # Generate Prisma Client
+npm run prisma:migrate     # Run database migrations
+npm run prisma:studio      # Open Prisma Studio (DB GUI)
+npm run prisma:seed        # Seed the database
 ```
 
 ### Notion Consumer Commands
@@ -192,17 +260,38 @@ npm start
 npm run dev
 ```
 
-### Kafka Commands
+### Infrastructure Commands
 
 ```bash
-# View logs
-docker-compose logs -f kafka
+# View logs for all services
+docker-compose logs -f
 
-# Stop Kafka
+# View specific service logs
+docker-compose logs -f postgres
+docker-compose logs -f kafka
+docker-compose logs -f rabbitmq
+
+# Stop all services
 docker-compose down
 
-# Stop and remove volumes
+# Stop and remove volumes (⚠️ deletes data)
 docker-compose down -v
+
+# Check service status
+docker-compose ps
+```
+
+### Database Management
+
+```bash
+# Connect to PostgreSQL
+docker exec -it postgres psql -U lifehub -d lifehub
+
+# View database tables
+\dt
+
+# Exit psql
+\q
 ```
 
 ---
@@ -229,6 +318,22 @@ docker-compose down -v
 2. Verify Kafka broker is accessible
 3. Check logs for connection errors
 4. Ensure all dependencies are installed
+5. Run Prisma migrations: `npm run prisma:migrate`
+6. Generate Prisma Client: `npm run prisma:generate`
+
+### Database Connection Issues
+
+1. Ensure PostgreSQL is running: `docker-compose ps postgres`
+2. Check PostgreSQL logs: `docker-compose logs postgres`
+3. Verify DATABASE_URL in .env matches docker-compose.yml credentials
+4. Run migrations: `npm run prisma:migrate`
+
+### RabbitMQ Connection Issues
+
+1. Ensure RabbitMQ is running: `docker-compose ps rabbitmq`
+2. Check RabbitMQ logs: `docker-compose logs rabbitmq`
+3. Access Management UI: http://localhost:15672
+4. Verify RABBITMQ_URL in .env matches docker-compose.yml credentials
 
 ---
 

@@ -1,0 +1,50 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model WorkoutLog {
+  id               String            @id @default(uuid())
+  type             String
+  sets             Int
+  reps             Int
+  weight           Float
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  notionSyncStatus NotionSyncStatus?
+
+  @@index([createdAt])
+  @@index([type])
+  @@map("workout_logs")
+}
+
+model NotionSyncStatus {
+  id           String     @id @default(uuid())
+  workoutLogId String     @unique
+  workoutLog   WorkoutLog @relation(fields: [workoutLogId], references: [id], onDelete: Cascade)
+  notionPageId String?
+  syncedAt     DateTime?
+  failedAt     DateTime?
+  errorMessage String?
+  retryCount   Int        @default(0)
+  status       SyncStatus @default(PENDING)
+
+  @@index([status])
+  @@index([workoutLogId])
+  @@map("notion_sync_status")
+}
+
+enum SyncStatus {
+  PENDING
+  SYNCED
+  FAILED
+  RETRYING
+}

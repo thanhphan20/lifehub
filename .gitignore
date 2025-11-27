@@ -3,7 +3,7 @@ dist/
 .env
 services/*/node_modules/
 services/*/dist/
-
+services/api-gateway/src/generated/
 
 # Logs
 logs
