@@ -14,13 +14,26 @@ async function bootstrap() {
   const rabbitmqUrl = (configService.get<string>("RABBITMQ_URL") ||
     "amqp://lifehub:lifehub_password@localhost:5672") as string;
 
+  const kafkaBroker = configService.get<string>("KAFKA_BROKER") || "localhost:9094";
+
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.RMQ,
     options: {
       urls: [rabbitmqUrl],
       queue: "workout_queue",
-      queueOptions: {
-        durable: true,
+      queueOptions: { durable: true },
+    },
+  });
+
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.KAFKA,
+    options: {
+      client: {
+        clientId: "api-gateway",
+        brokers: [kafkaBroker],
+      },
+      consumer: {
+        groupId: "api-gateway-consumers",
       },
     },
   });
@@ -38,15 +51,14 @@ async function bootstrap() {
 
   // Start all microservices
   await app.startAllMicroservices();
-  console.log("✅ Microservices (RabbitMQ) connected");
 
   // Start HTTP server
-  const port = configService.get<number>("PORT") || 3000;
+  const port = configService.get<number>("PORT") || 8000;
   await app.listen(port);
 
-  console.log(`🚀 Application is running on: http://localhost:${port}`);
-  console.log(`📚 Swagger documentation: http://localhost:${port}/api`);
-  console.log(`🏥 Health check: http://localhost:${port}/health`);
-  console.log(`🐰 RabbitMQ Management: http://localhost:15672`);
+  console.log(`Swagger documentation: http://localhost:${port}/api`);
+  console.log(`Health check: http://localhost:${port}/health`);
+  console.log(`RabbitMQ Management: http://localhost:15672`);
+  console.log(`Kafka UI: http://localhost:8081`);
 }
 bootstrap();

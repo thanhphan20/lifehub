@@ -12,58 +12,66 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U lifehub"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d lifehub"]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped
 
   kafka:
-    image: confluentinc/cp-kafka:latest
+    image: apache/kafka:latest
     container_name: kafka
+    user: root
     ports:
-      - "9092:9092" # Broker (internal)
-      - "9093:9093" # Controller
-      - "9094:9094" # Host access
+      - "29092:29092"   # Host access
+      - "9092:9092"     # Internal Docker access
     environment:
-      KAFKA_KRAFT_MODE: "true"
+      # KRaft mode configuration
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
-
-      # Listener and advertised listener setup
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:9094,CONTROLLER://0.0.0.0:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9094
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      
+      # Listeners
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,HOST://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      
+      # Cluster ID (generate with `kafka-storage random-uuid` or use a fixed one)
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
 
-      # Kafka basics
-      KAFKA_LOG_DIRS: /var/lib/kafka/data
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      # Log directories
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
     volumes:
-      - kafka-data:/var/lib/kafka/data
-
+      - kafka-data:/tmp/kraft-combined-logs
     healthcheck:
-      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
-      interval: 30s
-      timeout: 20s
-      retries: 10
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     restart: unless-stopped
 
-    command: >
-      bash -c '
-        if [ ! -f /var/lib/kafka/data/meta.properties ]; then
-          kafka-storage format --ignore-formatted -t $(kafka-storage random-uuid) -c /etc/kafka/kafka.properties;
-        fi;
-        /etc/confluent/docker/run &
-        sleep 20;
-        kafka-topics --bootstrap-server localhost:9092 --create --if-not-exists --topic workout-logs --partitions 3 --replication-factor 1;
-        wait
-      '
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8081:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: ""   # KRaft only
+      DYNAMIC_CONFIG_ENABLED: 'true'
+    depends_on:
+      - kafka
+    restart: unless-stopped
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
@@ -88,8 +96,6 @@ volumes:
   postgres-data:
     driver: local
   kafka-data:
-    driver: local
-  kafka-test-data:
     driver: local
   rabbitmq-data:
     driver: local
