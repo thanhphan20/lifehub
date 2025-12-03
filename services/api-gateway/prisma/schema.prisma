@@ -12,39 +12,15 @@ datasource db {
 }
 
 model WorkoutLog {
-  id               String            @id @default(uuid())
-  type             String
-  sets             Int
-  reps             Int
-  weight           Float
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  notionSyncStatus NotionSyncStatus?
+  id        String   @id @default(uuid())
+  type      String
+  sets      Int
+  reps      Int
+  weight    Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([createdAt])
   @@index([type])
   @@map("workout_logs")
-}
-
-model NotionSyncStatus {
-  id           String     @id @default(uuid())
-  workoutLogId String     @unique
-  workoutLog   WorkoutLog @relation(fields: [workoutLogId], references: [id], onDelete: Cascade)
-  notionPageId String?
-  syncedAt     DateTime?
-  failedAt     DateTime?
-  errorMessage String?
-  retryCount   Int        @default(0)
-  status       SyncStatus @default(PENDING)
-
-  @@index([status])
-  @@index([workoutLogId])
-  @@map("notion_sync_status")
-}
-
-enum SyncStatus {
-  PENDING
-  SYNCED
-  FAILED
-  RETRYING
 }

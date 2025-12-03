@@ -31,11 +31,6 @@ export class WorkoutService {
         sets: workoutLogDto.sets,
         reps: workoutLogDto.reps,
         weight: workoutLogDto.weight,
-        notionSyncStatus: {
-          create: {
-            status: "PENDING" as const,
-          },
-        },
       },
     });
 
@@ -71,11 +66,6 @@ export class WorkoutService {
       });
     } catch (error) {
       this.logger.error("Failed to publish to RabbitMQ", error);
-      // Update sync status to failed
-      await this.prisma.notionSyncStatus.update({
-        where: { workoutLogId: workoutLog.id },
-        data: { status: "FAILED", failedAt: new Date(), errorMessage: String(error) },
-      });
       throw error; // RabbitMQ is critical for Notion sync, so we throw
     }
 
@@ -91,9 +81,6 @@ export class WorkoutService {
         take: limit,
         skip: offset,
         orderBy: { createdAt: "desc" },
-        include: {
-          notionSyncStatus: true,
-        },
       }),
       this.prisma.workoutLog.count(),
     ]);
@@ -112,9 +99,6 @@ export class WorkoutService {
   async getWorkoutLogById(id: string) {
     return this.prisma.workoutLog.findUnique({
       where: { id },
-      include: {
-        notionSyncStatus: true,
-      },
     });
   }
 }

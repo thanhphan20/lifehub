@@ -20,7 +20,7 @@ async function bootstrap() {
     transport: Transport.RMQ,
     options: {
       urls: [rabbitmqUrl],
-      queue: "workout_queue",
+      queue: "workout-queue",
       queueOptions: { durable: true },
     },
   });
