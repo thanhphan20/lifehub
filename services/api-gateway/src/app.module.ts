@@ -8,6 +8,7 @@ import { PrismaModule } from "./prisma/prisma.module";
 import { HttpExceptionFilter } from "./common/http-exception.filter";
 import { LoggingInterceptor } from "./common/logging.interceptor";
 import { HealthController } from "./health.controller";
+import { StravaModule } from "./strava/strava.module";
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { HealthController } from "./health.controller";
     KafkaModule,
     RabbitMQModule,
     WorkoutModule,
+    StravaModule,
   ],
   controllers: [HealthController],
   providers: [

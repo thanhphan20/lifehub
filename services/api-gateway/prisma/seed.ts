@@ -31,11 +31,6 @@ async function main() {
     const created = await prisma.workoutLog.create({
       data: {
         ...workout,
-        notionSyncStatus: {
-          create: {
-            status: "PENDING",
-          },
-        },
       },
     });
     console.log(`✅ Created workout log: ${created.type} (${created.id})`);
