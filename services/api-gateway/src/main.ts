@@ -41,6 +41,13 @@ async function bootstrap() {
   // HTTP API configuration
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
 
+  // CORS configuration for frontend -> API calls
+  const frontendOrigin = configService.get<string>("FRONTEND_ORIGIN") || "http://localhost:3000";
+  app.enableCors({
+    origin: frontendOrigin,
+    credentials: true,
+  });
+
   const config = new DocumentBuilder()
     .setTitle("Workout API Gateway")
     .setDescription("API for logging workouts with Kafka and RabbitMQ integration")

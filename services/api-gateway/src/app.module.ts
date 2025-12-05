@@ -4,6 +4,7 @@ import { APP_FILTER, APP_INTERCEPTOR } from "@nestjs/core";
 import { WorkoutModule } from "./workout/workout.module";
 import { KafkaModule } from "./kafka/kafka.module";
 import { RabbitMQModule } from "./rabbitmq/rabbitmq.module";
+import { RedisModule } from "./redis/redis.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { HttpExceptionFilter } from "./common/http-exception.filter";
 import { LoggingInterceptor } from "./common/logging.interceptor";
@@ -19,6 +20,7 @@ import { StravaModule } from "./strava/strava.module";
     PrismaModule,
     KafkaModule,
     RabbitMQModule,
+    RedisModule,
     WorkoutModule,
     StravaModule,
   ],

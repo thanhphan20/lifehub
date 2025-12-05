@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Req, Post, Body, Headers, Logger, Res } from "@nestjs/common";
+import { Controller, Get, Query, Post, Body, Headers, Logger, Res, ParseIntPipe } from "@nestjs/common";
 import { StravaService } from "./strava.service";
 
 @Controller("strava")
@@ -14,14 +14,19 @@ export class StravaController {
   }
 
   @Get("callback")
-  async callback(@Query("code") code: string, @Query("state") state: string) {
+  async callback(@Query("code") code: string, @Query("scope") scope: string, @Query("state") state: string) {
     if (!code) return { ok: false, error: "Missing OAuth code" };
 
     const tokens = await this.strava.exchangeCode(code);
 
     await this.strava.upsertStravaToken(tokens);
 
-    return { ok: true, message: "Strava connected successfully" };
+    return { ok: true, message: "Strava connected successfully", received: { state, code, scope } };
+  }
+
+  @Get("activities")
+  async getRecentActivities(@Query("perPage", new ParseIntPipe({ optional: true })) perPage?: number) {
+    return this.strava.fetchRecentActivities(perPage ?? 20);
   }
 
   @Get("webhook")

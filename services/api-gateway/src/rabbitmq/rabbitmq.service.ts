@@ -311,7 +311,7 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
 
             if (!options?.noAck) {
               // Don't requeue - send to DLX if configured, otherwise drop
-              channel.nack(msg, false, false);
+              channel.nack(msg, false, true);
             }
           }
         },
