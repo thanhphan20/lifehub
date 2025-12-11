@@ -2,13 +2,14 @@ import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { APP_FILTER, APP_INTERCEPTOR } from "@nestjs/core";
 import { WorkoutModule } from "./workout/workout.module";
-import { KafkaModule } from "./kafka/kafka.module";
-import { RabbitMQModule } from "./rabbitmq/rabbitmq.module";
-import { RedisModule } from "./redis/redis.module";
+import { KafkaModule } from "./adapters/kafka/kafka.module";
+import { RabbitMQModule } from "./adapters/rabbitmq/rabbitmq.module";
+import { MessagingModule } from "./application/messaging/message.module";
+import { RedisModule } from "./adapters/redis/redis.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { HttpExceptionFilter } from "./common/http-exception.filter";
 import { LoggingInterceptor } from "./common/logging.interceptor";
-import { HealthController } from "./health.controller";
+import { HealthController } from "./health/health.controller";
 import { StravaModule } from "./strava/strava.module";
 
 @Module({
@@ -23,6 +24,7 @@ import { StravaModule } from "./strava/strava.module";
     RedisModule,
     WorkoutModule,
     StravaModule,
+    MessagingModule,
   ],
   controllers: [HealthController],
   providers: [

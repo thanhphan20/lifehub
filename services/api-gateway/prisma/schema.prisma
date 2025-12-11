@@ -34,3 +34,23 @@ model StravaToken {
 
   @@map("strava_tokens")
 }
+
+model Outbox {
+  id        String       @id @default(uuid())
+  eventType String
+  payload   Json
+  status    OutboxStatus @default(PENDING)
+  retries   Int          @default(0)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([status, createdAt])
+  @@map("outbox")
+}
+
+enum OutboxStatus {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+}

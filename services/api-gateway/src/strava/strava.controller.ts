@@ -1,5 +1,6 @@
-import { Controller, Get, Query, Post, Body, Headers, Logger, Res, ParseIntPipe } from "@nestjs/common";
+import { Controller, Get, Query, Post, Body, Headers, Logger, Res, ParseIntPipe, HttpStatus } from "@nestjs/common";
 import { StravaService } from "./strava.service";
+import { ApiResponse, ApiQuery, ApiTags } from "@nestjs/swagger";
 
 @Controller("strava")
 export class StravaController {
@@ -29,29 +30,81 @@ export class StravaController {
     return this.strava.fetchRecentActivities(perPage ?? 20);
   }
 
+  /**
+   * Webhook subscription verification endpoint
+   * Strava sends a GET request with hub.challenge, hub.mode, and hub.verify_token
+   * Must respond with 200 and echo the challenge within 2 seconds
+   */
   @Get("webhook")
-  verifySubscription(@Query("hub.challenge") challenge: string, @Res() res: Response) {
-    if (!challenge) return { error: "Missing challenge" };
+  verifySubscription(
+    @Query("hub.challenge") challenge: string,
+    @Query("hub.mode") mode: string,
+    @Query("hub.verify_token") verifyToken: string,
+    @Res({ passthrough: true }) res: Response
+  ) {
+    this.logger.log("Webhook verification request received", { mode, verifyToken });
 
-    return {
-      challenge: challenge,
-    };
+    // Validate that all required parameters are present
+    if (!challenge || !mode || !verifyToken) {
+      this.logger.error("Missing required webhook verification parameters");
+      return { status: HttpStatus.BAD_REQUEST, error: "Missing required parameters" };
+    }
+
+    // Validate the verify token matches what you expect
+    // This should match the verify_token you used when creating the subscription
+    const expectedVerifyToken = this.strava.getWebhookVerifyToken();
+    if (verifyToken !== expectedVerifyToken) {
+      this.logger.error("Invalid verify token received", {
+        received: verifyToken,
+        expected: expectedVerifyToken,
+      });
+      return { status: HttpStatus.FORBIDDEN, error: "Invalid verify token" };
+    }
+
+    // Validate mode is "subscribe"
+    if (mode !== "subscribe") {
+      this.logger.error("Invalid mode received", { mode });
+      return { status: HttpStatus.BAD_REQUEST, error: "Invalid mode" };
+    }
+
+    // Echo back the challenge as required by Strava
+    this.logger.log("Webhook verification successful, echoing challenge");
+    return { "hub.challenge": challenge };
   }
 
   // Webhook verification and events
   @Post("webhook")
   async webhook(@Body() body: any, @Headers("x-strava-signature") signature: string) {
-    this.logger.log("Webhook event received", body);
+    const response = { received: true };
 
-    const { object_type, object_id, aspect_type } = body;
+    setImmediate(async () => {
+      try {
+        this.logger.log("Webhook event received", body);
 
-    if (object_type === "activity") {
-      // Only sync new or updated workouts
-      if (["create", "update"].includes(aspect_type)) {
-        await this.strava.enqueueActivityFetch(object_id);
+        const { object_type, object_id, aspect_type, updates, owner_id } = body;
+
+        // Handle activity events
+        if (object_type === "activity") {
+          // Only sync new or updated activities
+          if (aspect_type === "create" || aspect_type === "update") {
+            await this.strava.enqueueActivityFetch(object_id);
+            this.logger.log(`Enqueued activity ${object_id} for sync (${aspect_type})`);
+          } else if (aspect_type === "delete") {
+            this.logger.log(`Activity ${object_id} was deleted`);
+          }
+        }
+
+        // Handle athlete events (e.g., app deauthorization)
+        else if (object_type === "athlete") {
+          if (updates?.authorized === "false") {
+            this.logger.warn(`Athlete ${owner_id} deauthorized the app`);
+          }
+        }
+      } catch (error) {
+        this.logger.error("Error processing webhook event", error);
       }
-    }
+    });
 
-    return { received: true };
+    return response;
   }
 }

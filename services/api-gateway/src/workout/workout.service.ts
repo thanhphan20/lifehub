@@ -1,17 +1,19 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { WorkoutLogDto } from "./workout-log.dto";
-import { KafkaService } from "../kafka/kafka.service";
-import { RabbitMQService } from "../rabbitmq/rabbitmq.service";
-import { PrismaService } from "../prisma/prisma.service";
+import { WorkoutRepository } from "./workout.repository";
+import { MessagePublisher } from "../application/messaging/message-publisher.interface";
+import { RedisService } from "../adapters/redis/redis.service";
 
 @Injectable()
 export class WorkoutService {
   private readonly logger = new Logger(WorkoutService.name);
+  private readonly CACHE_TTL_SECONDS = 300;
+  private readonly CACHE_KEY_PREFIX = "workout:logs:";
 
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly kafkaService: KafkaService,
-    private readonly rabbitMQService: RabbitMQService
+    private readonly workoutRepo: WorkoutRepository,
+    private readonly publisher: MessagePublisher,
+    private readonly redisService: RedisService
   ) {}
 
   /**
@@ -24,50 +26,17 @@ export class WorkoutService {
    * @param correlationId - Optional correlation ID from request headers.
    */
   async logWorkout(workoutLogDto: WorkoutLogDto, correlationId?: string): Promise<{ id: string }> {
-    // 1. Persist to PostgreSQL (source of truth)
-    const workoutLog = await this.prisma.workoutLog.create({
-      data: {
-        type: workoutLogDto.type,
-        sets: workoutLogDto.sets,
-        reps: workoutLogDto.reps,
-        weight: workoutLogDto.weight,
-      },
-    });
+    // Persist to Database (source of truth)
+    const workoutLog = await this.workoutRepo.create(workoutLogDto);
 
     const logPayload = {
       id: workoutLog.id,
       ...workoutLogDto,
       correlationId: correlationId || undefined,
-      createdAt: workoutLog.createdAt.toISOString(),
     };
 
-    // 2. Publish to Kafka (event streaming - for analytics, indexing, multiple consumers)
-    try {
-      await this.kafkaService.publish("workout-logs", logPayload, correlationId);
-      this.logger.log("Workout log published to Kafka", {
-        id: workoutLog.id,
-        correlationId: correlationId || "none",
-      });
-    } catch (error) {
-      this.logger.error("Failed to publish to Kafka (non-blocking)", error);
-      // Don't throw - Kafka is for event streaming, not critical for basic functionality
-    }
-
-    // 3. Publish to RabbitMQ (reliable task processing - for Notion sync with retries)
-    try {
-      await this.rabbitMQService.publish("notion-sync-queue", {
-        workoutLogId: workoutLog.id,
-        ...workoutLogDto,
-        correlationId: correlationId || undefined,
-      });
-      this.logger.log("Workout log published to RabbitMQ for Notion sync", {
-        id: workoutLog.id,
-        correlationId: correlationId || "none",
-      });
-    } catch (error) {
-      this.logger.error("Failed to publish to RabbitMQ", error);
-      throw error; // RabbitMQ is critical for Notion sync, so we throw
-    }
+    // Publish to message publisher
+    await this.publisher.publish("workout-logs", logPayload, { correlationId });
 
     return { id: workoutLog.id };
   }
@@ -75,30 +44,38 @@ export class WorkoutService {
   /**
    * Retrieves workout logs from database.
    */
-  async getWorkoutLogs(limit: number = 10, offset: number = 0) {
-    const [logs, total] = await Promise.all([
-      this.prisma.workoutLog.findMany({
-        take: limit,
-        skip: offset,
-        orderBy: { createdAt: "desc" },
-      }),
-      this.prisma.workoutLog.count(),
-    ]);
+  async getWorkoutLogs(page: number = 1, limit: number = 20) {
+    const cacheKey = `${this.CACHE_KEY_PREFIX}page:${page}:limit:${limit}`;
+    const cached = await this.redisService.get(cacheKey);
 
-    return {
-      data: logs,
-      total,
-      limit,
-      offset,
-    };
+    if (cached) {
+      return cached;
+    }
+
+    const result = await this.workoutRepo.findAllWithPagination(page, limit);
+
+    await this.redisService.set(cacheKey, JSON.stringify(result), this.CACHE_TTL_SECONDS);
+
+    return result;
   }
 
   /**
    * Retrieves a single workout log by ID.
    */
   async getWorkoutLogById(id: string) {
-    return this.prisma.workoutLog.findUnique({
-      where: { id },
-    });
+    const cacheKey = `${this.CACHE_KEY_PREFIX}${id}`;
+    const cached = await this.redisService.get(cacheKey);
+
+    if (cached) {
+      return cached;
+    }
+
+    const workoutLog = await this.workoutRepo.findById(id);
+
+    if (workoutLog) {
+      await this.redisService.set(cacheKey, JSON.stringify(workoutLog), this.CACHE_TTL_SECONDS);
+    }
+
+    return workoutLog;
   }
 }

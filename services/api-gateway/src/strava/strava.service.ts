@@ -3,8 +3,8 @@ import { ConfigService } from "@nestjs/config";
 import { HttpService } from "@nestjs/axios";
 import { PrismaService } from "../prisma/prisma.service";
 import { firstValueFrom } from "rxjs";
-import { RabbitMQService } from "../rabbitmq/rabbitmq.service";
-import { RedisService } from "../redis/redis.service";
+import { RabbitMQService } from "../adapters/rabbitmq/rabbitmq.service";
+import { RedisService } from "../adapters/redis/redis.service";
 
 @Injectable()
 export class StravaService {
@@ -12,6 +12,7 @@ export class StravaService {
   private clientId: string;
   private clientSecret: string;
   private redirectUri: string;
+  private webhookVerifyToken: string;
   private readonly CACHE_TTL_SECONDS = 300; // 5 minutes cache for activities
   private readonly CACHE_KEY_PREFIX = "strava:activities:";
 
@@ -25,6 +26,11 @@ export class StravaService {
     this.clientId = this.configService.get<string>("STRAVA_CLIENT_ID") || "";
     this.clientSecret = this.configService.get<string>("STRAVA_CLIENT_SECRET") || "";
     this.redirectUri = this.configService.get<string>("STRAVA_REDIRECT_URI") || "";
+    this.webhookVerifyToken = this.configService.get<string>("STRAVA_WEBHOOK_VERIFY_TOKEN") || "STRAVA_WEBHOOK_SECRET";
+  }
+
+  getWebhookVerifyToken(): string {
+    return this.webhookVerifyToken;
   }
 
   getAuthorizeUrl(state = "sync") {
@@ -222,6 +228,76 @@ export class StravaService {
       }
     } catch (error) {
       this.logger.warn("Failed to invalidate activities cache", error);
+    }
+  }
+
+  /**
+   * Create a webhook subscription
+   * This should be called once during app setup or via an admin endpoint
+   */
+  async createWebhookSubscription(callbackUrl: string): Promise<any> {
+    try {
+      const payload = new URLSearchParams({
+        client_id: this.clientId,
+        client_secret: this.clientSecret,
+        callback_url: callbackUrl,
+        verify_token: this.webhookVerifyToken,
+      });
+
+      const response = await firstValueFrom(
+        this.http.post("https://www.strava.com/api/v3/push_subscriptions", payload.toString(), {
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        })
+      );
+
+      this.logger.log("Webhook subscription created successfully", response.data);
+      return response.data;
+    } catch (error: any) {
+      this.logger.error("Failed to create webhook subscription", error?.response?.data || error);
+      throw error;
+    }
+  }
+
+  /**
+   * View existing webhook subscription
+   */
+  async viewWebhookSubscription(): Promise<any> {
+    try {
+      const response = await firstValueFrom(
+        this.http.get("https://www.strava.com/api/v3/push_subscriptions", {
+          params: {
+            client_id: this.clientId,
+            client_secret: this.clientSecret,
+          },
+        })
+      );
+
+      this.logger.log("Retrieved webhook subscription", response.data);
+      return response.data;
+    } catch (error: any) {
+      this.logger.error("Failed to view webhook subscription", error?.response?.data || error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete webhook subscription
+   */
+  async deleteWebhookSubscription(subscriptionId: number): Promise<void> {
+    try {
+      await firstValueFrom(
+        this.http.delete(`https://www.strava.com/api/v3/push_subscriptions/${subscriptionId}`, {
+          params: {
+            client_id: this.clientId,
+            client_secret: this.clientSecret,
+          },
+        })
+      );
+
+      this.logger.log(`Webhook subscription ${subscriptionId} deleted successfully`);
+    } catch (error: any) {
+      this.logger.error(`Failed to delete webhook subscription ${subscriptionId}`, error?.response?.data || error);
+      throw error;
     }
   }
 }

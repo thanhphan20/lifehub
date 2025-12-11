@@ -2,8 +2,8 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { WorkoutController } from "./workout.controller";
 import { WorkoutService } from "./workout.service";
 import { PrismaService } from "../prisma/prisma.service";
-import { KafkaService } from "../kafka/kafka.service";
-import { RabbitMQService } from "../rabbitmq/rabbitmq.service";
+import { KafkaService } from "../adapters/kafka/kafka.service";
+import { RabbitMQService } from "../adapters/rabbitmq/rabbitmq.service";
 
 describe("WorkoutController", () => {
   let controller: WorkoutController;
