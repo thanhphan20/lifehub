@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
 import { OutboxService } from "./outbox.service";
 import { MessagePublisher } from "../messaging/message-publisher.interface";
@@ -9,7 +9,7 @@ export class OutboxProcessor {
 
   constructor(
     private readonly outboxService: OutboxService,
-    private readonly publishers: MessagePublisher[]
+    @Inject("MessagePublishers") private readonly publishers: MessagePublisher[]
   ) {}
 
   @Cron("*/30 * * * * *")

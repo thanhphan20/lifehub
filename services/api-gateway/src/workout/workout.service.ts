@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, Inject } from "@nestjs/common";
 import { WorkoutLogDto } from "./workout-log.dto";
 import { WorkoutRepository } from "./workout.repository";
 import { MessagePublisher } from "../application/messaging/message-publisher.interface";
@@ -6,13 +6,12 @@ import { RedisService } from "../adapters/redis/redis.service";
 
 @Injectable()
 export class WorkoutService {
-  private readonly logger = new Logger(WorkoutService.name);
   private readonly CACHE_TTL_SECONDS = 300;
   private readonly CACHE_KEY_PREFIX = "workout:logs:";
 
   constructor(
     private readonly workoutRepo: WorkoutRepository,
-    private readonly publisher: MessagePublisher,
+    @Inject("MessagePublishers") private readonly publisher: MessagePublisher,
     private readonly redisService: RedisService
   ) {}
 
