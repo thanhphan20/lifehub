@@ -14,9 +14,9 @@ export class OutboxMessage {
 
   static fromDb(record: any): OutboxMessage {
     return new OutboxMessage(
-      record.id,
       record.eventType,
       record.payload,
+      record.id,
       record.status,
       record.retries,
       record.createdAt,
@@ -34,14 +34,5 @@ export class OutboxMessage {
       createdAt: this.createdAt,
       updatedAt: new Date(),
     };
-  }
-
-  markSent() {
-    this.status = OutboxStatus.SENT;
-  }
-
-  incrementRetries() {
-    this.retries += 1;
-    this.status = OutboxStatus.FAILED;
   }
 }

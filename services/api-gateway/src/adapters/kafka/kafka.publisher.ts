@@ -8,9 +8,9 @@ export class KafkaPublisher implements MessagePublisher {
 
   constructor(private readonly kafkaService: KafkaService) {}
 
-  async publish(topic: string, message: any): Promise<void> {
+  async publish(topic: string, message: any, options: { correlationId?: string } | undefined): Promise<void> {
     try {
-      await this.kafkaService.publish(topic, message);
+      await this.kafkaService.publish(topic, message, options?.correlationId);
       this.logger.log(`Message published to Kafka topic ${topic}`);
     } catch (err) {
       this.logger.error(`Kafka publish failed: ${topic}`, err);

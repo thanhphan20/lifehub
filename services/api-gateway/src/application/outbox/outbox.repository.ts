@@ -1,4 +1,3 @@
-// src/core/outbox/outbox.repository.ts
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
 import { OutboxMessage } from "../outbox/outbox.entity";

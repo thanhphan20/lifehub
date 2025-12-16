@@ -9,7 +9,7 @@ const path = require('path');
 const notion = new Client({ auth: process.env.NOTION_TOKEN, timeoutMs: 5000 });
 const databaseId = process.env.NOTION_DB_ID;
 const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://localhost';
-const QUEUE_NAME = 'notion-sync-queue';
+const QUEUE_NAME = 'workout.created';
 
 const logger = winston.createLogger({
   level: 'info',

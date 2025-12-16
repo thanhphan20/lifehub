@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
+import { ScheduleModule } from "@nestjs/schedule";
 import { APP_FILTER, APP_INTERCEPTOR } from "@nestjs/core";
 import { WorkoutModule } from "./workout/workout.module";
 import { KafkaModule } from "./adapters/kafka/kafka.module";
@@ -18,6 +19,7 @@ import { StravaModule } from "./strava/strava.module";
       isGlobal: true,
       envFilePath: [".env", ".env.local"],
     }),
+    ScheduleModule.forRoot(),
     PrismaModule,
     KafkaModule,
     RabbitMQModule,

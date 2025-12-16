@@ -8,9 +8,9 @@ export class RabbitMQPublisher implements MessagePublisher {
 
   constructor(private readonly rabbitService: RabbitMQService) {}
 
-  async publish(topic: string, message: any): Promise<void> {
+  async publish(topic: string, message: any, options: any | undefined): Promise<void> {
     try {
-      await this.rabbitService.publish(topic, message);
+      await this.rabbitService.publish(topic, message, options);
       this.logger.log(`Message published to RabbitMQ queue ${topic}`);
     } catch (err) {
       this.logger.error(`RabbitMQ publish failed: ${topic}`, err);

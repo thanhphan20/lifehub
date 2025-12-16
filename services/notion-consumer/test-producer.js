@@ -7,7 +7,7 @@ const producer = kafka.producer();
 async function run() {
     await producer.connect();
     await producer.send({
-        topic: 'workout-logs',
+        topic: 'workout.created',
         messages: [
             {
                 value: JSON.stringify({ type: 'Bench Press', sets: 3, reps: 8, weight: 60 }),

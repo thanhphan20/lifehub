@@ -1,7 +1,6 @@
-import { Injectable, Logger, Inject } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { WorkoutLogDto } from "./workout-log.dto";
 import { WorkoutRepository } from "./workout.repository";
-import { MessagePublisher } from "../application/messaging/message-publisher.interface";
 import { RedisService } from "../adapters/redis/redis.service";
 
 @Injectable()
@@ -11,32 +10,28 @@ export class WorkoutService {
 
   constructor(
     private readonly workoutRepo: WorkoutRepository,
-    @Inject("MessagePublishers") private readonly publisher: MessagePublisher,
     private readonly redisService: RedisService
   ) {}
 
   /**
-   * Logs a workout with dual message broker strategy:
-   * - Kafka: For event streaming and long-term event sourcing (high throughput, event logs)
-   * - RabbitMQ: For reliable task processing and retries (durable queues, guaranteed delivery)
-   * - PostgreSQL: For immediate persistence and querying (source of truth)
+   * Logs a workout with hybrid outbox pattern for immediate delivery + reliability:
+   * - PostgreSQL: Atomic transaction saves workout + outbox message together
+   * - Immediate Publish: Tries to publish right away for fast delivery
+   * - Fallback: If publish fails, OutboxProcessor cron job will retry later
+   * - Publishers: Kafka (event streaming) + RabbitMQ (reliable task processing)
    *
    * @param workoutLogDto - The workout log data transfer object.
    * @param correlationId - Optional correlation ID from request headers.
    */
   async logWorkout(workoutLogDto: WorkoutLogDto, correlationId?: string): Promise<{ id: string }> {
     // Persist to Database (source of truth)
-    const workoutLog = await this.workoutRepo.create(workoutLogDto);
-
-    const logPayload = {
-      id: workoutLog.id,
-      ...workoutLogDto,
-      correlationId: correlationId || undefined,
-    };
-
-    // Publish to message publisher
-    await this.publisher.publish("workout-logs", logPayload, { correlationId });
-
+    const workoutLog = await this.workoutRepo.createWithOutbox(workoutLogDto, {
+      eventType: "workout.created",
+      payload: {
+        ...workoutLogDto,
+        correlationId,
+      },
+    });
     return { id: workoutLog.id };
   }
 
