@@ -35,6 +35,19 @@ model StravaToken {
   @@map("strava_tokens")
 }
 
+model MoodLog {
+  id        String   @id @default(uuid())
+  rating    Int // 1-10 scale
+  tags      String[] // Optional mood tags (calm, stressed, focused, etc.)
+  notes     String? // Optional lightweight notes
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
+  @@index([rating])
+  @@map("mood_logs")
+}
+
 model Outbox {
   id        String       @id @default(uuid())
   eventType String

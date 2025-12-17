@@ -12,6 +12,7 @@ import { HttpExceptionFilter } from "./common/http-exception.filter";
 import { LoggingInterceptor } from "./common/logging.interceptor";
 import { HealthController } from "./health/health.controller";
 import { StravaModule } from "./strava/strava.module";
+import { MoodModule } from "./mood/mood.module";
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { StravaModule } from "./strava/strava.module";
     RedisModule,
     WorkoutModule,
     StravaModule,
+    MoodModule,
     MessagingModule,
   ],
   controllers: [HealthController],
