@@ -48,6 +48,21 @@ model MoodLog {
   @@map("mood_logs")
 }
 
+model MealLog {
+  id          String   @id @default(uuid())
+  description String
+  date        DateTime
+  calories    Int
+  protein     Float
+  carbs       Float
+  fat         Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([date])
+  @@map("meal_logs")
+}
+
 model Outbox {
   id        String       @id @default(uuid())
   eventType String

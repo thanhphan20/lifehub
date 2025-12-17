@@ -13,6 +13,7 @@ import { LoggingInterceptor } from "./common/logging.interceptor";
 import { HealthController } from "./health/health.controller";
 import { StravaModule } from "./strava/strava.module";
 import { MoodModule } from "./mood/mood.module";
+import { NutritionModule } from "./nutrition/nutrition.module";
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { MoodModule } from "./mood/mood.module";
     WorkoutModule,
     StravaModule,
     MoodModule,
+    NutritionModule,
     MessagingModule,
   ],
   controllers: [HealthController],
