@@ -15,6 +15,8 @@ import { StravaModule } from "./strava/strava.module";
 import { MoodModule } from "./mood/mood.module";
 import { NutritionModule } from "./nutrition/nutrition.module";
 import { DailyModule } from "./daily/daily.module";
+import { ReadingModule } from "./reading/reading.module";
+import { LearningModule } from "./learning/learning.module";
 
 @Module({
   imports: [
@@ -32,6 +34,8 @@ import { DailyModule } from "./daily/daily.module";
     MoodModule,
     NutritionModule,
     DailyModule,
+    ReadingModule,
+    LearningModule,
     MessagingModule,
   ],
   controllers: [HealthController],

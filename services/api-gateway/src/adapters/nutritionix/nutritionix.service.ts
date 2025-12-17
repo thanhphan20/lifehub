@@ -17,10 +17,10 @@ export class NutritionixService {
 
   constructor(
     private readonly http: HttpService,
-    private readonly config: ConfigService
+    private readonly configService: ConfigService
   ) {
-    this.appId = this.config.get<string>("NUTRITIONIX_APP_ID", "");
-    this.apiKey = this.config.get<string>("NUTRITIONIX_API_KEY", "");
+    this.appId = this.configService.get<string>("NUTRITIONIX_APP_ID", "");
+    this.apiKey = this.configService.get<string>("NUTRITIONIX_API_KEY", "");
   }
 
   async analyze(description: string): Promise<NutritionSnapshot> {
