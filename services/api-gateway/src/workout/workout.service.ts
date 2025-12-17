@@ -72,4 +72,51 @@ export class WorkoutService {
 
     return workoutLog;
   }
+
+  /**
+   * Retrieves workout statistics for a given period.
+   * Supports: day, week, month, year (defaults to week).
+   */
+  async getWorkoutStats(period: string = "week") {
+    const now = new Date();
+    let startDate: Date;
+
+    switch (period.toLowerCase()) {
+      case "day": {
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        break;
+      }
+      case "week": {
+        const dayOfWeek = now.getDay();
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - dayOfWeek);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      }
+      case "month": {
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+      }
+      case "year": {
+        startDate = new Date(now.getFullYear(), 0, 1);
+        break;
+      }
+      default: {
+        const dayOfWeek = now.getDay();
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - dayOfWeek);
+        startDate.setHours(0, 0, 0, 0);
+      }
+    }
+
+    const cacheKey = `${this.CACHE_KEY_PREFIX}stats:${period}:${startDate.toISOString().slice(0, 10)}`;
+    const cached = await this.redisService.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const stats = await this.workoutRepo.getStatsByPeriod(startDate, now);
+    await this.redisService.set(cacheKey, JSON.stringify(stats), this.CACHE_TTL_SECONDS);
+    return stats;
+  }
 }

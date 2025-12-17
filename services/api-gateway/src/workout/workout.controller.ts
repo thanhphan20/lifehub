@@ -47,4 +47,17 @@ export class WorkoutController {
     }
     return log;
   }
+
+  @Get("stats")
+  @ApiOperation({ summary: "Get workout statistics for a period" })
+  @ApiQuery({
+    name: "period",
+    required: false,
+    enum: ["day", "week", "month", "year"],
+    description: "Stats period (default: week)",
+  })
+  @ApiResponse({ status: 200, description: "Workout statistics" })
+  async getWorkoutStats(@Query("period") period?: string) {
+    return this.workoutService.getWorkoutStats(period);
+  }
 }

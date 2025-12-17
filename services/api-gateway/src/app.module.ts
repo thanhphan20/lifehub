@@ -14,6 +14,7 @@ import { HealthController } from "./health/health.controller";
 import { StravaModule } from "./strava/strava.module";
 import { MoodModule } from "./mood/mood.module";
 import { NutritionModule } from "./nutrition/nutrition.module";
+import { DailyModule } from "./daily/daily.module";
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { NutritionModule } from "./nutrition/nutrition.module";
     StravaModule,
     MoodModule,
     NutritionModule,
+    DailyModule,
     MessagingModule,
   ],
   controllers: [HealthController],

@@ -63,6 +63,18 @@ model MealLog {
   @@map("meal_logs")
 }
 
+model DailyEntry {
+  id        String   @id @default(uuid())
+  date      DateTime
+  todos     Json // Array of { id, text, status: 'pending' | 'done' | 'skipped' }
+  summary   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([date])
+  @@map("daily_entries")
+}
+
 model Outbox {
   id        String       @id @default(uuid())
   eventType String
