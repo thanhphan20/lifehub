@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { MoodLogDto } from "./mood-log.dto";
 import { MoodRepository } from "./mood.repository";
 import { RedisService } from "../adapters/redis/redis.service";
+import { EventType, MoodCreatedPayload } from "../application/messaging/events";
 
 @Injectable()
 export class MoodService {
@@ -14,14 +15,21 @@ export class MoodService {
   ) {}
 
   /**
-   * Logs a mood entry.
+   * Logs a mood entry with outbox pattern for event streaming.
    * @param moodLogDto - The mood log data transfer object.
    * @param correlationId - Optional correlation ID from request headers.
    */
   async logMood(moodLogDto: MoodLogDto, correlationId?: string): Promise<{ id: string }> {
-    const moodLog = await this.moodRepo.create({
-      ...moodLogDto,
-      correlationId,
+    const moodLog = await this.moodRepo.createWithOutbox(moodLogDto, {
+      eventType: EventType.MOOD_CREATED,
+      payload: {
+        id: "", // Placeholder, will be updated in transaction
+        rating: moodLogDto.rating,
+        tags: moodLogDto.tags,
+        notes: moodLogDto.notes,
+        createdAt: new Date().toISOString(),
+        correlationId,
+      } as MoodCreatedPayload,
     });
 
     return { id: moodLog.id };

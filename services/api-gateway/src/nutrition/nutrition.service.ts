@@ -3,6 +3,7 @@ import { NutritionRepository } from "./nutrition.repository";
 import { RedisService } from "../adapters/redis/redis.service";
 import { CreateMealDto } from "./nutrition.dto";
 import { NutritionixService } from "../adapters/nutritionix/nutritionix.service";
+import { EventType, MealLoggedPayload } from "../application/messaging/events";
 
 @Injectable()
 export class NutritionService {
@@ -15,20 +16,36 @@ export class NutritionService {
     private readonly nutritionix: NutritionixService
   ) {}
 
-  async logMeal(dto: CreateMealDto) {
+  async logMeal(dto: CreateMealDto, correlationId?: string) {
     const now = new Date();
     const date = dto.date ? new Date(dto.date) : now;
 
     const snapshot = await this.nutritionix.analyze(dto.description);
 
-    const meal = await this.nutritionRepo.create({
-      description: dto.description,
-      date,
-      calories: snapshot.calories,
-      protein: snapshot.protein,
-      carbs: snapshot.carbs,
-      fat: snapshot.fat,
-    });
+    const meal = await this.nutritionRepo.createWithOutbox(
+      {
+        description: dto.description,
+        date,
+        calories: snapshot.calories,
+        protein: snapshot.protein,
+        carbs: snapshot.carbs,
+        fat: snapshot.fat,
+      },
+      {
+        eventType: EventType.MEAL_LOGGED,
+        payload: {
+          id: "", // Placeholder, will be updated in transaction
+          description: dto.description,
+          date: date.toISOString().slice(0, 10),
+          calories: snapshot.calories,
+          protein: snapshot.protein,
+          carbs: snapshot.carbs,
+          fat: snapshot.fat,
+          createdAt: new Date().toISOString(),
+          correlationId,
+        } as MealLoggedPayload,
+      }
+    );
 
     // Invalidate basic caches
     await this.redisService.del(`${this.CACHE_KEY_PREFIX}meals:${date.toISOString().slice(0, 10)}`);

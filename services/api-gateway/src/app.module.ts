@@ -17,6 +17,7 @@ import { NutritionModule } from "./nutrition/nutrition.module";
 import { DailyModule } from "./daily/daily.module";
 import { ReadingModule } from "./reading/reading.module";
 import { LearningModule } from "./learning/learning.module";
+import { AnalyticsModule } from "./analytics/analytics.module";
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { LearningModule } from "./learning/learning.module";
     DailyModule,
     ReadingModule,
     LearningModule,
+    AnalyticsModule,
     MessagingModule,
   ],
   controllers: [HealthController],

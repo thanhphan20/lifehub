@@ -16,15 +16,15 @@ export class DailyRepository extends PrismaBaseRepository<DailyEntry> {
   async upsertByDate(date: Date, todos: DailyTodo[], summary: string | null) {
     return this.prisma.dailyEntry.upsert({
       where: { date },
-      update: { todos, summary },
-      create: { date, todos, summary },
+      update: { todos: JSON.stringify(todos), summary },
+      create: { date, todos: JSON.stringify(todos), summary },
     });
   }
 
   async updateTodos(date: Date, todos: DailyTodo[]) {
     return this.prisma.dailyEntry.update({
       where: { date },
-      data: { todos },
+      data: { todos: JSON.stringify(todos) },
     });
   }
 

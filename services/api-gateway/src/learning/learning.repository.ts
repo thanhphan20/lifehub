@@ -8,10 +8,6 @@ export class SkillRepository extends PrismaBaseRepository<Skill> {
   constructor(private prisma: PrismaService) {
     super(prisma.skill);
   }
-
-  async findById(id: string) {
-    return this.prisma.skill.findUnique({ where: { id } });
-  }
 }
 
 @Injectable()

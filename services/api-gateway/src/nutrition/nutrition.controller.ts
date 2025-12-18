@@ -1,4 +1,5 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Req } from "@nestjs/common";
+import { Request } from "express";
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { NutritionService } from "./nutrition.service";
 import { CreateMealDto } from "./nutrition.dto";
@@ -12,11 +13,13 @@ export class NutritionController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: "Log a meal using natural language" })
   @ApiResponse({ status: 201, description: "Meal logged successfully" })
-  async logMeal(@Body() dto: CreateMealDto) {
-    const meal = await this.nutritionService.logMeal(dto);
+  async logMeal(@Body() dto: CreateMealDto, @Req() req: Request) {
+    const correlationId = (req.headers["x-correlation-id"] as string) || undefined;
+    const meal = await this.nutritionService.logMeal(dto, correlationId);
     return {
       message: "Meal logged successfully",
       meal,
+      correlationId: correlationId || null,
     };
   }
 

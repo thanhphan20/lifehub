@@ -15,10 +15,6 @@ export class ReadingRepository extends PrismaBaseRepository<Book> {
       orderBy: { createdAt: "desc" },
     });
   }
-
-  async findById(id: string) {
-    return this.prisma.book.findUnique({ where: { id } });
-  }
 }
 
 @Injectable()

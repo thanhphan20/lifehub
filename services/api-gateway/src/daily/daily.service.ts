@@ -30,7 +30,7 @@ export class DailyService {
       status: "pending",
     };
 
-    const todos = Array.isArray(entry.todos) ? [...(entry.todos as DailyTodo[]), todo] : [todo];
+    const todos = Array.isArray(entry.todos) ? [...(entry.todos as unknown as DailyTodo[]), todo] : [todo];
     await this.dailyRepo.updateTodos(date, todos);
 
     return { date: date.toISOString().slice(0, 10), todo };
@@ -41,7 +41,7 @@ export class DailyService {
     const entry = await this.dailyRepo.findByDate(date);
     if (!entry) throw new NotFoundException("Daily entry not found for date");
 
-    const todos = Array.isArray(entry.todos) ? (entry.todos as DailyTodo[]) : [];
+    const todos = Array.isArray(entry.todos) ? (entry.todos as unknown as DailyTodo[]) : [];
     const updatedTodos = todos.map((t) => (t.id === dto.todoId ? { ...t, status: dto.status } : t));
 
     const found = updatedTodos.some((t) => t.id === dto.todoId);

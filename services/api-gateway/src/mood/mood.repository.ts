@@ -20,23 +20,18 @@ export class MoodRepository extends PrismaBaseRepository<MoodLog> {
         },
       });
 
+      // Update payload with actual ID
+      const payload = { ...event.payload, id: moodLog.id };
+
       await tx.outbox.create({
         data: {
           eventType: event.eventType,
-          payload: event.payload,
+          payload: payload,
           status: "PENDING",
         },
       });
 
       return moodLog;
-    });
-  }
-
-  // Uses base repository's findAllWithPagination method
-
-  async findById(id: string) {
-    return this.prisma.moodLog.findUnique({
-      where: { id },
     });
   }
 
