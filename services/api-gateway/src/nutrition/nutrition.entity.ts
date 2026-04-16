@@ -6,7 +6,7 @@ export class MealLog {
     public calories: number,
     public protein: number,
     public carbs: number,
-    public fat: number
+    public fat: number,
   ) {}
 
   toObject() {

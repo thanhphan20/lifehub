@@ -23,11 +23,11 @@ export class LoggingInterceptor implements NestInterceptor {
     this.logger.log(`Incoming Request: ${method} ${url}`, { correlationId });
 
     return next.handle().pipe(
-      tap((data) => {
+      tap(() => {
         const statusCode = res.statusCode;
         const elapsed = Date.now() - now;
         this.logger.log(`Response: ${method} ${url} ${statusCode} - ${elapsed}ms`, { correlationId });
-      })
+      }),
     );
   }
 }

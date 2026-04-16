@@ -11,7 +11,7 @@ export class LearningService {
   constructor(
     private readonly skillRepo: SkillRepository,
     private readonly selfTestRepo: SelfTestRepository,
-    private readonly redisService: RedisService
+    private readonly redisService: RedisService,
   ) {}
 
   async createSkill(dto: CreateSkillDto) {

@@ -4,7 +4,7 @@ export class WorkoutLog {
     public type: string,
     public sets: number,
     public reps: number,
-    public weight: number
+    public weight: number,
   ) {}
 
   toObject() {

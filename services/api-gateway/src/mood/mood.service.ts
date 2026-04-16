@@ -11,7 +11,7 @@ export class MoodService {
 
   constructor(
     private readonly moodRepo: MoodRepository,
-    private readonly redisService: RedisService
+    private readonly redisService: RedisService,
   ) {}
 
   /**
@@ -85,24 +85,26 @@ export class MoodService {
       case "day":
         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         break;
-      case "week":
+      case "week": {
         const dayOfWeek = now.getDay();
         startDate = new Date(now);
         startDate.setDate(now.getDate() - dayOfWeek);
         startDate.setHours(0, 0, 0, 0);
         break;
+      }
       case "month":
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
         break;
       case "year":
         startDate = new Date(now.getFullYear(), 0, 1);
         break;
-      default:
+      default: {
         // Default to week
         const defaultDayOfWeek = now.getDay();
         startDate = new Date(now);
         startDate.setDate(now.getDate() - defaultDayOfWeek);
         startDate.setHours(0, 0, 0, 0);
+      }
     }
 
     const cacheKey = `${this.CACHE_KEY_PREFIX}stats:${period}:${startDate.toISOString()}`;

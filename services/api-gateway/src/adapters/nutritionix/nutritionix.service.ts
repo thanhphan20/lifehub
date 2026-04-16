@@ -17,7 +17,7 @@ export class NutritionixService {
 
   constructor(
     private readonly http: HttpService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
   ) {
     this.appId = this.configService.get<string>("NUTRITIONIX_APP_ID", "");
     this.apiKey = this.configService.get<string>("NUTRITIONIX_API_KEY", "");
@@ -37,7 +37,7 @@ export class NutritionixService {
             "x-app-id": this.appId,
             "x-app-key": this.apiKey,
           },
-        }
+        },
       );
 
       const { data } = await firstValueFrom(response$);
@@ -55,7 +55,7 @@ export class NutritionixService {
             fat: acc.fat + (food.nf_total_fat || 0),
           };
         },
-        { calories: 0, protein: 0, carbs: 0, fat: 0 }
+        { calories: 0, protein: 0, carbs: 0, fat: 0 },
       );
 
       return {

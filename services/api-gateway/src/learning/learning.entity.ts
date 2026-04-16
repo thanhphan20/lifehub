@@ -3,7 +3,7 @@ export class Skill {
     public readonly id: string,
     public name: string,
     public proficiency: number,
-    public notes: string | null
+    public notes: string | null,
   ) {}
 
   toObject() {
@@ -22,7 +22,7 @@ export class SelfTest {
     public skillId: string,
     public score: number | null,
     public notes: string | null,
-    public date: Date
+    public date: Date,
   ) {}
 
   toObject() {

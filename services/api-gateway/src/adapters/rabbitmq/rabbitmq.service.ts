@@ -34,20 +34,20 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
     try {
       const rabbitmqUrl = this.configService.get<string>(
         "RABBITMQ_URL",
-        "amqp://lifehub:lifehub_password@localhost:5672"
+        "amqp://lifehub:lifehub_password@localhost:5672",
       );
-      //@ts-ignore
+      //@ts-expect-error
       this.connection = await connect(rabbitmqUrl);
       this.reconnectAttempts = 0;
       this.logger.log("Successfully connected to RabbitMQ");
 
       // Setup event handlers
-      //@ts-ignore
+      //@ts-expect-error
       this.connection.on("error", (err) => {
         this.logger.error("RabbitMQ connection error", err);
       });
 
-      //@ts-ignore
+      //@ts-expect-error
       this.connection.on("close", () => {
         this.logger.warn("RabbitMQ connection closed, attempting to reconnect...");
         this.handleConnectionClose();
@@ -69,16 +69,16 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      //@ts-ignore
+      //@ts-expect-error
       this.publishChannel = await this.connection.createConfirmChannel();
 
-      //@ts-ignore
+      //@ts-expect-error
       this.publishChannel.on("error", (err) => {
         this.logger.error("Publish channel error", err);
         this.publishChannel = null;
       });
 
-      //@ts-ignore
+      //@ts-expect-error
       this.publishChannel.on("close", () => {
         this.logger.warn("Publish channel closed");
         this.publishChannel = null;
@@ -139,7 +139,7 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
     // Close connection
     if (this.connection) {
       try {
-        //@ts-ignore
+        //@ts-expect-error
         await this.connection.close();
         this.logger.log("Disconnected from RabbitMQ");
       } catch (error) {
@@ -191,7 +191,7 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
             } else {
               resolve();
             }
-          }
+          },
         );
       });
 
@@ -213,7 +213,7 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
     exchange: string,
     routingKey: string,
     message: any,
-    exchangeType: "direct" | "topic" | "fanout" | "headers" = "topic"
+    exchangeType: "direct" | "topic" | "fanout" | "headers" = "topic",
   ): Promise<void> {
     try {
       const channel = await this.ensurePublishChannel();
@@ -252,7 +252,7 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
       noAck?: boolean;
       prefetch?: number;
       deadLetterExchange?: string;
-    }
+    },
   ): Promise<void> {
     if (!this.connection) {
       throw new Error("RabbitMQ connection not established");
@@ -267,7 +267,7 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
         return;
       }
 
-      //@ts-ignore
+      //@ts-expect-error
       const channel = await this.connection.createChannel();
       this.consumerChannels.set(channelKey, channel);
 
@@ -315,7 +315,7 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
             }
           }
         },
-        { noAck: options?.noAck || false }
+        { noAck: options?.noAck || false },
       );
 
       this.logger.log(`Started consuming from queue: ${queue}`);

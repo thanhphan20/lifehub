@@ -30,7 +30,7 @@ export class MoodController {
   @ApiResponse({ status: 200, description: "List of mood logs" })
   async getMoodLogs(
     @Query("page", new ParseIntPipe({ optional: true })) page?: number,
-    @Query("limit", new ParseIntPipe({ optional: true })) limit?: number
+    @Query("limit", new ParseIntPipe({ optional: true })) limit?: number,
   ) {
     return this.moodService.getMoodLogs(page || 1, limit || 20);
   }

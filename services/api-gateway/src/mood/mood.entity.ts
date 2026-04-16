@@ -3,7 +3,7 @@ export class MoodLog {
     public readonly id: string,
     public rating: number,
     public tags: string[],
-    public notes: string | null
+    public notes: string | null,
   ) {}
 
   toObject() {

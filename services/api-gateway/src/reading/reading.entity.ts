@@ -14,7 +14,7 @@ export class Book {
     public rating: number | null,
     public notes: string | null,
     public startedAt: Date | null,
-    public completedAt: Date | null
+    public completedAt: Date | null,
   ) {}
 
   toObject() {
@@ -39,7 +39,7 @@ export class ReadingSession {
     public pages: number | null,
     public minutes: number | null,
     public notes: string | null,
-    public date: Date
+    public date: Date,
   ) {}
 
   toObject() {

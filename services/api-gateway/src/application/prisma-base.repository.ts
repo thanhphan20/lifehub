@@ -12,7 +12,7 @@ export abstract class PrismaBaseRepository<T> {
   async findAllWithPagination(
     page: number = 1,
     perPage: number = 10,
-    filters: Record<string, any> = {}
+    filters: Record<string, any> = {},
   ): Promise<{
     data: T[];
     meta: {

@@ -11,7 +11,7 @@ export class ReadingService {
   constructor(
     private readonly bookRepo: ReadingRepository,
     private readonly sessionRepo: ReadingSessionRepository,
-    private readonly redisService: RedisService
+    private readonly redisService: RedisService,
   ) {}
 
   async createBook(dto: CreateBookDto) {

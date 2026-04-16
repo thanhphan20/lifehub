@@ -9,7 +9,7 @@ export class OutboxMessage {
     public status: OutboxStatus = OutboxStatus.PENDING,
     public retries: number = 0,
     public createdAt: Date = new Date(),
-    public updatedAt: Date = new Date()
+    public updatedAt: Date = new Date(),
   ) {}
 
   static fromDb(record: any): OutboxMessage {
@@ -20,7 +20,7 @@ export class OutboxMessage {
       record.status,
       record.retries,
       record.createdAt,
-      record.updatedAt
+      record.updatedAt,
     );
   }
 

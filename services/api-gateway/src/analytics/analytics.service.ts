@@ -76,7 +76,7 @@ export class AnalyticsService {
     };
   }
 
-  async getWeeklySummary(weekStr?: string) {
+  async getWeeklySummary(_weekStr?: string) {
     // Calculate week start date
     const now = new Date();
     const dayOfWeek = now.getDay();
@@ -127,7 +127,7 @@ export class AnalyticsService {
         readingPages: 0,
         selfTests: 0,
         daysWithSummary: 0,
-      }
+      },
     );
 
     return {

@@ -10,7 +10,7 @@ export class WorkoutService {
 
   constructor(
     private readonly workoutRepo: WorkoutRepository,
-    private readonly redisService: RedisService
+    private readonly redisService: RedisService,
   ) {}
 
   /**

@@ -74,7 +74,7 @@ export class NutritionRepository extends PrismaBaseRepository<MealLog> {
           count: acc.count + 1,
         };
       },
-      { calories: 0, protein: 0, carbs: 0, fat: 0, count: 0 }
+      { calories: 0, protein: 0, carbs: 0, fat: 0, count: 0 },
     );
   }
 }

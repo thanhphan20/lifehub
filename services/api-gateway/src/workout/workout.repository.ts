@@ -50,7 +50,14 @@ export class WorkoutRepository extends PrismaBaseRepository<WorkoutLog> {
       };
     }
 
-    const totals = logs.reduce(
+    interface WorkoutTotals {
+      count: number;
+      totalSets: number;
+      totalReps: number;
+      totalVolume: number;
+    }
+
+    const totals = logs.reduce<WorkoutTotals>(
       (acc, log) => {
         const volume = log.sets * log.reps * log.weight;
         return {
@@ -60,7 +67,7 @@ export class WorkoutRepository extends PrismaBaseRepository<WorkoutLog> {
           totalVolume: acc.totalVolume + volume,
         };
       },
-      { count: 0, totalSets: 0, totalReps: 0, totalVolume: 0 }
+      { count: 0, totalSets: 0, totalReps: 0, totalVolume: 0 },
     );
 
     return {

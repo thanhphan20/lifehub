@@ -1,6 +1,6 @@
 import { Controller, Get, Query, Post, Body, Headers, Logger, Res, ParseIntPipe, HttpStatus } from "@nestjs/common";
 import { StravaService } from "./strava.service";
-import { ApiResponse, ApiQuery, ApiTags } from "@nestjs/swagger";
+// import { ApiResponse, ApiQuery, ApiTags } from "@nestjs/swagger";
 
 @Controller("strava")
 export class StravaController {
@@ -40,7 +40,7 @@ export class StravaController {
     @Query("hub.challenge") challenge: string,
     @Query("hub.mode") mode: string,
     @Query("hub.verify_token") verifyToken: string,
-    @Res({ passthrough: true }) res: Response
+    @Res({ passthrough: true }) _res: any,
   ) {
     this.logger.log("Webhook verification request received", { mode, verifyToken });
 
@@ -74,7 +74,7 @@ export class StravaController {
 
   // Webhook verification and events
   @Post("webhook")
-  async webhook(@Body() body: any, @Headers("x-strava-signature") signature: string) {
+  async webhook(@Body() body: any, @Headers("x-strava-signature") _signature: string) {
     const response = { received: true };
 
     setImmediate(async () => {

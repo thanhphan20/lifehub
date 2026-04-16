@@ -9,7 +9,7 @@ export class OutboxProcessor {
 
   constructor(
     private readonly outboxService: OutboxService,
-    @Inject("MessagePublishers") private readonly publishers: MessagePublisher[]
+    @Inject("MessagePublishers") private readonly publishers: MessagePublisher[],
   ) {}
 
   @Cron("*/5 * * * * *")

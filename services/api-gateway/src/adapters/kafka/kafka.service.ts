@@ -23,7 +23,7 @@ export class KafkaService {
   private failureCount = 0;
   private readonly failureThreshold = 3;
   private circuitOpen = false;
-  private circuitTimeout: NodeJS.Timeout | null = null;
+  private circuitTimeout: ReturnType<typeof setTimeout> | null = null;
   private readonly openDuration = 30000; // 30 seconds
 
   private async getProducer(): Promise<Producer> {

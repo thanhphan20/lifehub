@@ -11,7 +11,7 @@ export class DailyEntry {
     public readonly id: string,
     public date: Date,
     public todos: DailyTodo[],
-    public summary: string | null
+    public summary: string | null,
   ) {}
 
   toObject() {

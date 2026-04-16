@@ -8,6 +8,3 @@ import { KafkaPublisher } from "./kafka.publisher";
   exports: [KafkaService, KafkaPublisher],
 })
 export class KafkaModule {}
-
-
-

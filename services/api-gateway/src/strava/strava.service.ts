@@ -21,7 +21,7 @@ export class StravaService {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
     private readonly rabbitMQService: RabbitMQService,
-    private readonly redisService: RedisService
+    private readonly redisService: RedisService,
   ) {
     this.clientId = this.configService.get<string>("STRAVA_CLIENT_ID") || "";
     this.clientSecret = this.configService.get<string>("STRAVA_CLIENT_SECRET") || "";
@@ -56,7 +56,7 @@ export class StravaService {
     const response = await firstValueFrom(
       this.http.post("https://www.strava.com/oauth/token", payload.toString(), {
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      })
+      }),
     );
 
     this.logger.log("Successfully exchanged Strava OAuth code.");
@@ -75,7 +75,7 @@ export class StravaService {
     const response = await firstValueFrom(
       this.http.post("https://www.strava.com/api/v3/oauth/token", payload.toString(), {
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      })
+      }),
     );
 
     this.logger.log("Refreshed Strava access token.");
@@ -162,7 +162,7 @@ export class StravaService {
           headers: {
             Authorization: `Bearer ${tokenRecord.accessToken}`,
           },
-        })
+        }),
       );
 
       const activities = response.data;
@@ -190,7 +190,7 @@ export class StravaService {
               headers: {
                 Authorization: `Bearer ${tokenRecord.accessToken}`,
               },
-            })
+            }),
           );
 
           const activities = retryResponse.data;
@@ -247,7 +247,7 @@ export class StravaService {
       const response = await firstValueFrom(
         this.http.post("https://www.strava.com/api/v3/push_subscriptions", payload.toString(), {
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        })
+        }),
       );
 
       this.logger.log("Webhook subscription created successfully", response.data);
@@ -269,7 +269,7 @@ export class StravaService {
             client_id: this.clientId,
             client_secret: this.clientSecret,
           },
-        })
+        }),
       );
 
       this.logger.log("Retrieved webhook subscription", response.data);
@@ -291,7 +291,7 @@ export class StravaService {
             client_id: this.clientId,
             client_secret: this.clientSecret,
           },
-        })
+        }),
       );
 
       this.logger.log(`Webhook subscription ${subscriptionId} deleted successfully`);

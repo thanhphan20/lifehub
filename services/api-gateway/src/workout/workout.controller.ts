@@ -30,7 +30,7 @@ export class WorkoutController {
   @ApiResponse({ status: 200, description: "List of workout logs" })
   async getWorkoutLogs(
     @Query("limit", new ParseIntPipe({ optional: true })) limit?: number,
-    @Query("offset", new ParseIntPipe({ optional: true })) offset?: number
+    @Query("offset", new ParseIntPipe({ optional: true })) offset?: number,
   ) {
     return this.workoutService.getWorkoutLogs(limit || 10, offset || 0);
   }

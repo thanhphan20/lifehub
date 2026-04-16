@@ -13,7 +13,7 @@ export class NutritionService {
   constructor(
     private readonly nutritionRepo: NutritionRepository,
     private readonly redisService: RedisService,
-    private readonly nutritionix: NutritionixService
+    private readonly nutritionix: NutritionixService,
   ) {}
 
   async logMeal(dto: CreateMealDto, correlationId?: string) {
@@ -44,7 +44,7 @@ export class NutritionService {
           createdAt: new Date().toISOString(),
           correlationId,
         } as MealLoggedPayload,
-      }
+      },
     );
 
     // Invalidate basic caches
