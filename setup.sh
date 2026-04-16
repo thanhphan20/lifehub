@@ -44,7 +44,7 @@ cd ../..
 
 # Setup Notion Consumer
 echo "🔧 Setting up Notion Consumer..."
-cd services/notion-cosumer
+cd services/notion-consumer
 
 if [ ! -d "node_modules" ]; then
     echo "📦 Installing Notion Consumer dependencies..."
@@ -65,9 +65,9 @@ echo ""
 echo "✅ Setup complete!"
 echo ""
 echo "Next steps:"
-echo "1. Update services/notion-cosumer/.env with your Notion credentials"
+echo "1. Update services/notion-consumer/.env with your Notion credentials"
 echo "2. Start API Gateway: cd services/api-gateway && npm run start:dev"
-echo "3. Start Notion Consumer: cd services/notion-cosumer && npm start"
+echo "3. Start Notion Consumer: cd services/notion-consumer && npm start"
 echo "4. Test the API: curl http://localhost:3000/health"
 echo ""
 
