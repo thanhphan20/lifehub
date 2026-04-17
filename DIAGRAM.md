@@ -1,233 +1,165 @@
-# LifeHub — Diagrams (PlantUML) + SQL Schema
+# LifeHub Architecture Diagrams
 
-This document contains **PlantUML** diagrams (business flow, infrastructure, event flow) and **Postgres (psql) DDL/code snippets** so you can visualize the diagram using PlantUML and try out the schema locally.
+This document provides visual representations of the LifeHub ecosystem using **Mermaid.js**. These diagrams reflect the **Choreography SAGA** pattern and the distributed worker model.
 
 ---
 
-## 1) Business Flow (PlantUML)
+## 1. System Overview (Landscape)
 
-Save the following to the file `diagrams/business-flow.puml` and render it using PlantUML.
+```mermaid
+graph LR
+    User((User)) -->|HTTPS| Gateway[API Gateway]
+    Gateway -->|Ingest Event| Kafka((Kafka Broker))
+    
+    subgraph "Workers (The SAGA Team)"
+        WorkerI[Integration Worker]
+        WorkerN[Notion Worker]
+        WorkerA[Analytics Worker]
+    end
 
-```plantuml
-@startuml
-title LifeHub — Business Flow
-actor User as U
-participant "Frontend\n(Web/Mobile)" as FE
-participant "API Gateway\n(NestJS)" as API
-database "Postgres / Supabase" as DB
-queue "Kafka\n(event topics)" as KAFKA
-participant "Notion Consumer" as NOTION
-participant "Indexer\n(Elasticsearch)" as INDEXER
-participant "Redis" as REDIS
-participant "RabbitMQ/Bull" as QUEUE
+    Kafka -->|raw.ingest| WorkerI
+    WorkerI -->|v1.enriched.logged| Kafka
+    Kafka -->|v1.enriched.logged| WorkerN
+    Kafka -->|v1.enriched.logged| WorkerA
 
-U -> FE : enters workout log
-FE -> API : POST /log/workout {payload}
-API -> DB : BEGIN TRANSACTION
-API -> DB : INSERT activity_log
-API -> DB : INSERT outbox(event)
-API -> DB : COMMIT
-API -> REDIS : set cache (recent logs)
-API -> KAFKA : produce "workout.created" (or outbox daemon publishes)
-API -> FE : 200 OK + websocket emit
+    subgraph "Persistence & State"
+        DB[(PostgreSQL)]
+        Redis[(Redis Idempotency)]
+    end
 
-KAFKA -> NOTION : consume 'workout.created'
-NOTION -> NOTION : map -> Notion payload
-NOTION -> NOTION : call Notion API
-NOTION -> DB : update notion_sync_status
-NOTION -> QUEUE : on failure -> push retry job
-
-KAFKA -> INDEXER : consume -> update Elasticsearch
-INDEXER -> Elasticsearch : index document
-
-QUEUE -> NOTION : retry jobs (backoff)
-
-@enduml
+    Gateway --> DB
+    WorkerI --> Redis
+    WorkerN --> Redis
+    WorkerA --> Redis
+    WorkerA --> DB
+    
+    subgraph "External Ecosystem"
+        Ninja[API Ninjas]
+        Notion[Notion API]
+    end
+    
+    WorkerI --> Ninja
+    WorkerN --> Notion
 ```
 
 ---
 
-## 2) Infrastructure Architecture (PlantUML)
+## 2. Record Lifecycle (State Transition)
 
-Save the following file `diagrams/infrastructure.puml`.
+This diagram tracks how a tracking record moves through the system's decoupled states.
 
-```plantuml
-@startuml
-title LifeHub — Infrastructure Overview
-skinparam componentStyle rectangle
+```mermaid
+stateDiagram-v2
+    [*] --> IngestionPending: User Request
+    IngestionPending --> EnrichmentInProgress: raw.ingest emitted
+    
+    state EnrichmentInProgress {
+        [*] --> CallingAPI: Worker Picked Up
+        CallingAPI --> Success: 200 OK
+        CallingAPI --> Failed: Max Retries
+    }
 
-package "Edge / Clients" {
-  [Web App] as FE
-  [Mobile App] as MOBILE
-}
+    EnrichmentInProgress --> Enriched: enriched.logged emitted
+    EnrichmentInProgress --> DeadLetterQueue: Enrichment Failed
+    
+    Enriched --> Syncing: Workers triggered
+    
+    state Syncing {
+        [*] --> NotionSync
+        [*] --> AnalyticsSync
+        NotionSync --> NotionDone: sync_completed
+        AnalyticsSync --> AnalyticsDone: sync_completed
+    }
 
-package "Ingress" {
-  [Nginx LB / TLS Termination] as NGINX
-}
-
-package "Application" {
-  [API Gateway\n(NestJS)\nPM2 / Containers] as API
-  [Socket.IO / SSE] as WS
-}
-
-package "Data & Messaging" {
-  database "Postgres / Supabase" as DB
-  queue "Kafka Cluster" as KAFKA
-  queue "RabbitMQ" as RMQ
-  [Redis (Cache/BullMQ)] as REDIS
-  [Elasticsearch] as ES
-}
-
-package "Workers / Consumers" {
-  [Notion Consumer\n(Node/Python)] as NC
-  [Indexer Service] as IDX
-  [Analytics Worker\n(Celery/BullMQ)] as AW
-}
-
-package "Storage & Cloud" {
-  [S3 / MinIO] as S3
-  [Docker Registry / ECR] as REG
-}
-
-FE --> NGINX
-MOBILE --> NGINX
-NGINX --> API
-API --> DB
-API --> KAFKA
-API --> REDIS
-API --> WS
-KAFKA --> NC
-KAFKA --> IDX
-NC --> NotionAPI
-IDX --> ES
-NC --> RMQ : push retry on fail
-AW --> RMQ
-REDIS --> WS : pub/sub
-
-@enduml
+    NotionDone --> [*]
+    AnalyticsDone --> [*]
 ```
 
 ---
 
-## 3) Event Flow Diagram (PlantUML)
+## 3. SAGA Choreography Flow (Sequence)
 
-Save the following file `diagrams/event-flow.puml`.
+Including the **Error Paths** and **Feedback Loop**.
 
-```plantuml
-@startuml
-title LifeHub — Event Flow
-actor User
-participant API
-queue Kafka
-participant OutboxDaemon
-participant NotionConsumer
-participant Indexer
-participant RabbitMQ
-participant BullMQ
-participant AnalyticsWorker
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant G as API Gateway
+    participant K as Kafka
+    participant W as Integration Worker
+    participant N as Notion Worker
+    participant A as Analytics Worker
 
-User -> API : POST /log (workout)
-API -> DB : write activity & outbox
-API -> Kafka : (or OutboxDaemon publishes) produce workout.created
-note right: event payload includes: activity_id, user_id, timestamp, type, meta
+    U->>G: POST /v1/ingest/unified (raw text)
+    G->>G: Save record (PENDING)
+    G->>K: Publish v1.nutrition.raw.ingest
+    G-->>U: 202 Accepted (Correlation ID)
 
-Kafka -> NotionConsumer : workout.created
-NotionConsumer -> NotionAPI : create page
-alt notion success
-  NotionConsumer -> DB : update sync_status = synced
-else notion failure
-  NotionConsumer -> RabbitMQ : push notion_retry(job)
-end
+    Note over K,W: Enrichment Phase
+    K->>W: Consume raw.ingest
+    alt Success
+        W->>W: Enrichment Logic
+        W->>K: Publish v1.nutrition.enriched.logged
+    else Failure (Max Retries)
+        W->>K: Publish v1.error.enrichment_failed
+    end
 
-Kafka -> Indexer : workout.created
-Indexer -> ES : index document
+    Note over K,N: Sync Phase
+    K->>N: Consume enriched.logged
+    alt Notion Success
+        N->>N: Sync to Notion
+        N->>K: Publish ACK: v1.notion.sync_completed
+    else Notion Failed
+        N->>K: Publish ACK: v1.notion.sync_failed
+    end
 
-RabbitMQ -> NotionRetryWorker : consume retry job
-NotionRetryWorker -> NotionAPI : retry call
-
-Kafka -> AnalyticsWorker : workout.created
-AnalyticsWorker -> DB : increment aggregates / write daily summary
-
-Kafka -> BullMQ : emit lightweight jobs (notifications)
-BullMQ -> PushService : deliver push notification
-
-@enduml
+    Note over K,G: Portal Feedback
+    K->>G: Consume sync_completed/failed
+    G->>G: Update DB syncDetails
 ```
 
 ---
 
-## 4) Postgres (psql) Schema & snippets
+## 4. Entity Relationship Diagram (ERD)
 
-Save to `db/schema.sql` and run `psql -f db/schema.sql` (or use Supabase SQL editor).
+```mermaid
+erDiagram
+    WorkoutLog {
+        string id PK
+        string correlationId UK
+        string type "WORKOUT | NUTRITION"
+        string rawText
+        string enrichmentStatus "PENDING | COMPLETED | FAILED"
+        json syncDetails "Record of service outcomes"
+        datetime createdAt
+    }
 
-```sql
--- Users
-CREATE TABLE IF NOT EXISTS users (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  email text UNIQUE NOT NULL,
-  display_name text,
-  created_at timestamptz DEFAULT now()
-);
-
--- Activity logs
-CREATE TABLE IF NOT EXISTS activity_logs (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid REFERENCES users(id) ON DELETE CASCADE,
-  type text NOT NULL,
-  payload jsonb,
-  volume numeric,
-  created_at timestamptz DEFAULT now(),
-  sync_status text DEFAULT 'pending'
-);
-
--- Outbox pattern table
-CREATE TABLE IF NOT EXISTS outbox (
-  id bigserial PRIMARY KEY,
-  aggregate_type text NOT NULL,
-  aggregate_id uuid,
-  topic text NOT NULL,
-  payload jsonb NOT NULL,
-  published boolean DEFAULT false,
-  created_at timestamptz DEFAULT now()
-);
-
--- Notion syncs
-CREATE TABLE IF NOT EXISTS notion_syncs (
-  id bigserial PRIMARY KEY,
-  activity_id uuid REFERENCES activity_logs(id) ON DELETE CASCADE,
-  notion_page_id text,
-  status text,
-  last_error text,
-  updated_at timestamptz DEFAULT now()
-);
-
--- Analytics materialized view example
-CREATE MATERIALIZED VIEW IF NOT EXISTS daily_user_volume AS
-SELECT
-  user_id,
-  date_trunc('day', created_at) AS day,
-  sum((payload->>'volume')::numeric) AS total_volume
-FROM activity_logs
-GROUP BY user_id, date_trunc('day', created_at);
-
--- Indexes for search/performance
-CREATE INDEX IF NOT EXISTS idx_activity_user_created ON activity_logs(user_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_activity_type ON activity_logs(type);
-CREATE INDEX IF NOT EXISTS idx_outbox_published ON outbox(published);
-
--- Example transaction: write activity + outbox
-BEGIN;
-  INSERT INTO activity_logs(user_id, type, payload) VALUES
-  ('00000000-0000-0000-0000-000000000001','deadlift', '{"sets":4,"reps":6,"weight":120}'::jsonb)
-  RETURNING id;
-  -- suppose returned id = <activity_id>
-  INSERT INTO outbox(aggregate_type, aggregate_id, topic, payload) VALUES
-  ('activity', '<activity_id>'::uuid, 'workout.created', json_build_object('activity_id', '<activity_id>'));
-COMMIT;
-
--- Outbox daemon pseudo-query to publish
-SELECT id, topic, payload FROM outbox WHERE published = false ORDER BY created_at LIMIT 100;
--- after publish -> UPDATE outbox SET published = true WHERE id IN (...)
+    StravaToken {
+        int id PK
+        string accessToken
+        string refreshToken
+        int expiresAt
+    }
 ```
 
 ---
+
+## 5. Resilience & Idempotency Logic
+
+```mermaid
+flowchart TD
+    Msg[Message Received] --> Lock{Redis NX Lock?}
+    Lock -->|No| Skip[Skip Processing]
+    Lock -->|Yes| Process[Primary Action]
+    Process --> Success{Success?}
+    Success -->|Yes| PublishACK[Publish ACK Event]
+    Success -->|No| Retry[Retry with Exponential Backoff]
+    Retry --> Max{Max Retries?}
+    Max -->|Yes| DLQ[Move to Dead Letter Queue]
+    Max -->|No| Backoff[Wait & Re-queue]
+```
+
+---
+
+> [!TIP]
+> All diagrams are maintained in **Mermaid.js**. You can preview them directly in GitHub or use the [Mermaid Live Editor](https://mermaid.live/).

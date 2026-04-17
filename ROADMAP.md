@@ -8,289 +8,81 @@ A focused, realistic roadmap to evolve **LifeHub** into a personal life tracking
 
 LifeHub is a **personal data hub** that helps you understand your body, productivity, and growth over time by combining **manual reflection** with **selective integrations**.
 
-Principles:
+---
 
-- Manual-first, integrations where they _actually add value_
-- Event-driven & analytics-ready
-- Simple inputs → meaningful insights
-- No duplicate tools (LifeHub summarizes, not replaces)
+## ✅ Completed Milestones (2025-2026)
+
+### Core Infrastructure
+- **Hybrid Architecture**: NestJS Gateway + Distributed Workers.
+- **Unified SAGA**: Choreography-based event flow with Kafka.
+- **Idempotency**: Redis-based deduplication for all SAGA participants.
+- **Database**: Prisma-based PostgreSQL source of truth with state-decoupled status tracking.
+
+### Feature Set
+- **API Ninjas Enrichment**: NL meal and workout processing replacement for Nutritionix. ✅
+- **Unified Ingestion**: Combined NL and structured input SAGA. ✅
+- **Worker Consolidation**: Grouped analytics, notion, and enrichment workers into a unified suite. ✅
 
 ---
 
-## 📊 Feature Scope (Final)
+## 📊 Current Focus: Phase 2 – Insights & Hardening
 
-### 1. Health & Fitness
+### 1. Health & Fitness Hardening
+- **Strava Webhooks**: Transition Strava sync from manual enqueue to full SAGA raw ingestion via webhook payload.
+- **Heart Rate & Sleep**: Integrate sleep data (manual-first) to correlate with mood and productivity.
+- **Macro Goals**: Add user-defined daily targets for calories and protein.
+- **Data Validation**: Implement stricter Zod schemas for enriched data validation before DB persistence.
 
-#### 1.1 Workouts (via Strava) ✅
-
-- Sync workouts from Strava
-- Distance, duration, calories, heart rate (if available)
-- Activity types: run, ride, walk, etc.
-
-**Integration**
-
-- Strava Public API
-
-**Core APIs**
-
-```
-GET /workouts
-GET /workouts/stats?period=week
-```
+### 2. Strategic Integrations
+- **Google Calendar**: Import life context (trips, milestones) as background events for analytics.
+- **LeetCode**: Simple daily habit auto-completion via public GraphQL API and dedicated LeetCode worker.
 
 ---
 
-#### 1.2 Nutrition Tracking (via Nutritionix)
+## 📈 Future Phases
 
-- Manual meal logging using natural language
-- Calories & macro breakdown (protein, carbs, fat)
-- Store calculated nutrition snapshot (not raw API dependency)
+### Phase 3 – The Dashboard (UI/UX)
+- **Real-time Stats**: Live updates of daily calorie count via SAGA tracker and WebSockets (Socket.io).
+- **Weekly Rollups**: Automated Notion summaries of "Week in Review" with trend analysis.
+- **Visual Trends**: Mood vs Productivity graphs using `recharts` or `D3`.
+- **Mobile PWA**: Optimize the frontend for mobile-first habit logging.
 
-**Integration**
-
-- Nutritionix API
-
-**Core APIs**
-
-```
-POST /nutrition/meals
-GET /nutrition/meals?date=YYYY-MM-DD
-GET /nutrition/stats?period=week
-```
+### Phase 4 – Scalability & personalization
+- **Multi-user Support**: Multitenancy in SAGA flow (user context isolation) and Auth (Clerk or NextAuth).
+- **Custom Adapters**: Plugin system for custom data enrichment (e.g., specific gym apps).
+- **Vector Memory**: Store long-term tracking history in a Vector DB (e.g., Pinecone) for LLM-based life coaching.
 
 ---
 
-#### 1.3 Mood Logging
+## 🛠️ Tech Stack Evolution
 
-- Daily mood rating (1–10)
-- Optional mood tags (calm, stressed, focused)
-- Lightweight notes
-
-**Core APIs**
-
-```
-POST /mood/logs
-GET /mood/stats?period=week
-```
+| Current | Future | Reasoning |
+| :--- | :--- | :--- |
+| **Kafka (Bitnami)** | **Confluent/Redpanda** | Managed scalability and better schema registry support. |
+| **OpenAPI** | **tRPC / TypeSpec** | End-to-end type safety between Gateway and Workers. |
+| **Redis** | **DragonflyDB** | Better vertical scale for high-throughput idempotency checks. |
+| **Standard SQL** | **Presto/Trino** | For complex cross-domain analytics queries. |
 
 ---
 
-### 2. Productivity
+## 🎯 KPIs & Success Metrics
 
-#### 2.1 Daily To-Dos + Day Summary
-
-- Simple daily checklist
-- Mark done / skipped
-- Auto-rollover unfinished tasks
-- End-of-day summary (wins, blockers)
-
-**Core APIs**
-
-```
-POST /daily-todos
-POST /daily-summary
-GET /daily?date=YYYY-MM-DD
-```
+- **SAGA Completion Rate**: >99.9% of ingestion events reach "DONE" in `syncDetails`.
+- **Enrichment Latency**: Average time from `raw.ingest` to `enriched.logged` < 2 seconds.
+- **Idempotency Accuracy**: Zero duplicate records in Notion for replayed messages.
+- **User Engagement**: % of suggested macro targets met weekly.
 
 ---
 
-#### 2.2 Habit Tracking
+## 🧱 Architecture Principles
 
-- Daily / weekly habits
-- Streak tracking
-- Visual consistency (chains)
-- Manual-first logging with optional automation
-
-**Habit Types**
-
-- BOOLEAN (did or not)
-- COUNT (number-based, e.g. problems solved)
-
-**Core APIs**
-
-```
-POST /habits
-POST /habits/:id/log
-GET /habits/:id/streak
-```
+- **Manual-first**: Integrations add context, they don't replace intention.
+- **Event-driven**: All side effects are async and traceable.
+- **Idempotency by Default**: No message should ever process twice.
+- **Schema-first**: Events are defined by strict contracts.
 
 ---
-
-#### 2.3 Habit Integration: LeetCode
-
-- Track LeetCode practice as a daily habit
-- Auto-complete habit using LeetCode public GraphQL API (best-effort)
-- Fallback to manual logging if sync fails
-- Manual logs always override automation
-
-**Integration**
-
-- LeetCode GraphQL endpoint (read-only, public data)
-
-**Tracked Signals**
-
-- Daily submission activity
-- Submission count per day
-
-**Notes**
-
-- No official API, integration is non-critical
-- Feature-flagged and optional per user
-
----
-
-#### 2.4 Notion Integration
-
-- Pull tasks & notes from Notion
-- Optional push of daily / weekly summaries
-- Notion remains source of truth
-
-**Integration**
-
-- Notion API (read-first)
-
----
-
-### 3. Learning & Growth
-
-#### 3.1 Reading Log
-
-- Track books: reading / completed / wishlist
-- Manual progress tracking
-- Notes & ratings
-
-**Core APIs**
-
-```
-POST /reading/books
-POST /reading/sessions
-GET /reading/books?status=reading
-```
-
----
-
-#### 3.2 Skill & Self-Test Tracking
-
-- Track skills being learned
-- Self-assessed proficiency
-- Practice sessions & notes
-
-**Core APIs**
-
-```
-POST /learning/skills
-PUT /learning/skills/:id/progress
-POST /learning/self-tests
-```
-
----
-
-### 4. Personal & Reflection
-
-#### 4.1 Daily Review
-
-- What went well
-- Challenges
-- Tomorrow’s focus
-- Weekly rollups
-
-**Core APIs**
-
-```
-POST /reviews/daily
-GET /reviews/weekly?week=YYYY-WW
-```
-
----
-
-#### 4.2 Life Events (Google Calendar – Read Only)
-
-- Import major life events from Google Calendar
-- Trips, anniversaries, milestones
-- Enrich analytics (mood, productivity context)
-
-**Integration**
-
-- Google Calendar API (read-only)
-
----
-
-## 🔗 Integrations Summary
-
-### Active Integrations
-
-- Strava (workouts)
-- Nutritionix (nutrition)
-- Notion (productivity)
-- Google Calendar (life events)
-
-### Explicitly Excluded (for now)
-
-- Sleep tracking
-- Health vitals / medical data
-- Passive time tracking
-- Social / community features
-
----
-
-## 📈 Analytics (Phase Later)
-
-- Weekly & monthly summaries
-- Habit streaks
-- Nutrition vs workout correlation
-- Mood vs productivity trends
-
-Analytics is **read-only** and built after sufficient data exists.
-
----
-
-## 🚀 Implementation Phases
-
-### Phase 1 – Core Health (Weeks 1–2)
-
-1. Nutrition tracking (Nutritionix)
-2. Mood logging
-3. Workout stats aggregation
-
----
-
-### Phase 2 – Productivity (Weeks 3–4)
-
-1. Daily to-dos + summaries
-2. Habit tracking
-3. Notion sync (read-only)
-
----
-
-### Phase 3 – Learning (Weeks 5–6)
-
-1. Reading log
-2. Skill & self-tests
-
----
-
-### Phase 4 – Context & Insights (Weeks 7–8)
-
-1. Google Calendar life events
-2. Weekly / monthly reports
-3. Basic dashboards
-
----
-
-## 🧱 Architecture Notes
-
-- API-first (REST)
-- Prisma ORM
-- Kafka for domain events
-- Manual-first input strategy
-- Integrations are _enhancements_, not dependencies
-
----
-
-## 🎯 Guiding Rule
 
 > If a feature does not help daily reflection or long-term insight, it does not belong in LifeHub.
-
----
 
 Happy building 🚀
