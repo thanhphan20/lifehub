@@ -11,7 +11,14 @@ export class NutritionRepository extends PrismaBaseRepository<MealLog> {
 
   async createWithOutbox(data: any, event: { eventType: string; payload: any }) {
     return this.prisma.$transaction(async (tx) => {
-      const meal = await tx.mealLog.create({ data });
+      const meal = await tx.mealLog.create({
+        data: {
+          ...data,
+          correlationId: event.payload.correlationId,
+          enrichmentStatus: data.rawText || (!data.calories && data.description) ? "PENDING" : "NOT_REQUIRED",
+          rawText: data.rawText || data.description,
+        },
+      });
 
       // Update payload with actual ID
       const payload = { ...event.payload, id: meal.id };

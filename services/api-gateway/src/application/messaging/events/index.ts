@@ -25,6 +25,29 @@ export enum EventType {
   SKILL_CREATED = "skill.created",
   SKILL_PROGRESS_UPDATED = "skill.progress.updated",
   SELF_TEST_CREATED = "self.test.created",
+
+  // SAGA Events
+  RAW_INGEST = "raw.ingest",
+  ENRICHED_LOGGED = "enriched.logged",
+  SYNC_COMPLETED = "sync_completed",
+  SYNC_FAILED = "sync_failed",
+}
+
+export enum EventDomain {
+  NUTRITION = "nutrition",
+  WORKOUT = "workout",
+  MOOD = "mood",
+  SYSTEM = "system",
+}
+
+export interface LifeHubEvent<T = any> {
+  version: number;
+  msgId: string;
+  correlationId: string;
+  timestamp: string;
+  domain: string;
+  type: string;
+  data: T;
 }
 
 // Event payload interfaces

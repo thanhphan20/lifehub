@@ -12,16 +12,22 @@ datasource db {
 }
 
 model WorkoutLog {
-  id        String   @id @default(uuid())
-  type      String
-  sets      Int
-  reps      Int
-  weight    Float
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String           @id @default(uuid())
+  type             String
+  sets             Int
+  reps             Int
+  weight           Float
+  correlationId    String?          @db.VarChar(255)
+  enrichmentStatus EnrichmentStatus @default(NOT_REQUIRED)
+  syncDetails      Json?            @default("{}")
+  rawText          String?          @db.Text
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
+  @@unique([correlationId, type])
   @@index([createdAt])
   @@index([type])
+  @@index([correlationId])
   @@map("workout_logs")
 }
 
@@ -36,30 +42,39 @@ model StravaToken {
 }
 
 model MoodLog {
-  id        String   @id @default(uuid())
-  rating    Int // 1-10 scale
-  tags      String[] // Optional mood tags (calm, stressed, focused, etc.)
-  notes     String? // Optional lightweight notes
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String           @id @default(uuid())
+  rating           Int // 1-10 scale
+  tags             String[] // Optional mood tags (calm, stressed, focused, etc.)
+  notes            String? // Optional lightweight notes
+  correlationId    String?          @db.VarChar(255)
+  enrichmentStatus EnrichmentStatus @default(NOT_REQUIRED)
+  syncDetails      Json?            @default("{}")
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
   @@index([createdAt])
   @@index([rating])
+  @@index([correlationId])
   @@map("mood_logs")
 }
 
 model MealLog {
-  id          String   @id @default(uuid())
-  description String
-  date        DateTime
-  calories    Int
-  protein     Float
-  carbs       Float
-  fat         Float
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               String           @id @default(uuid())
+  description      String
+  date             DateTime
+  calories         Int
+  protein          Float
+  carbs            Float
+  fat              Float
+  correlationId    String?          @db.VarChar(255)
+  enrichmentStatus EnrichmentStatus @default(NOT_REQUIRED)
+  syncDetails      Json?            @default("{}")
+  rawText          String?          @db.Text
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
   @@index([date])
+  @@index([correlationId])
   @@map("meal_logs")
 }
 
@@ -157,5 +172,12 @@ enum OutboxStatus {
   PENDING
   PROCESSING
   SENT
+  FAILED
+}
+
+enum EnrichmentStatus {
+  NOT_REQUIRED
+  PENDING
+  COMPLETED
   FAILED
 }

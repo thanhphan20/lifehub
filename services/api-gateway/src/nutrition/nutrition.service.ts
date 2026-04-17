@@ -2,8 +2,8 @@ import { Injectable } from "@nestjs/common";
 import { NutritionRepository } from "./nutrition.repository";
 import { RedisService } from "../adapters/redis/redis.service";
 import { CreateMealDto } from "./nutrition.dto";
-import { NutritionixService } from "../adapters/nutritionix/nutritionix.service";
-import { EventType, MealLoggedPayload } from "../application/messaging/events";
+import { EventType, EventDomain, LifeHubEvent } from "../application/messaging/events";
+import { v4 as uuidv4 } from "uuid";
 
 @Injectable()
 export class NutritionService {
@@ -13,37 +13,45 @@ export class NutritionService {
   constructor(
     private readonly nutritionRepo: NutritionRepository,
     private readonly redisService: RedisService,
-    private readonly nutritionix: NutritionixService,
   ) {}
 
   async logMeal(dto: CreateMealDto, correlationId?: string) {
-    const now = new Date();
-    const date = dto.date ? new Date(dto.date) : now;
+    const cid = correlationId || uuidv4();
+    const date = dto.date ? new Date(dto.date) : new Date();
 
-    const snapshot = await this.nutritionix.analyze(dto.description);
+    // If structured data is provided, we can skip the enrichment worker
+    const isEnriched = !!(dto.calories || dto.protein || dto.carbs || dto.fat);
 
     const meal = await this.nutritionRepo.createWithOutbox(
       {
         description: dto.description,
         date,
-        calories: snapshot.calories,
-        protein: snapshot.protein,
-        carbs: snapshot.carbs,
-        fat: snapshot.fat,
+        calories: dto.calories || 0,
+        protein: dto.protein || 0,
+        carbs: dto.carbs || 0,
+        fat: dto.fat || 0,
+        rawText: dto.rawText || dto.description,
       },
       {
-        eventType: EventType.MEAL_LOGGED,
+        eventType: isEnriched ? `v1.nutrition.${EventType.ENRICHED_LOGGED}` : `v1.nutrition.${EventType.RAW_INGEST}`,
         payload: {
-          id: "", // Placeholder, will be updated in transaction
-          description: dto.description,
-          date: date.toISOString().slice(0, 10),
-          calories: snapshot.calories,
-          protein: snapshot.protein,
-          carbs: snapshot.carbs,
-          fat: snapshot.fat,
-          createdAt: new Date().toISOString(),
-          correlationId,
-        } as MealLoggedPayload,
+          version: 1,
+          msgId: uuidv4(),
+          correlationId: cid,
+          timestamp: new Date().toISOString(),
+          domain: EventDomain.NUTRITION,
+          type: isEnriched ? EventType.ENRICHED_LOGGED : EventType.RAW_INGEST,
+          data: {
+            id: "", // Will be filled by repo
+            description: dto.description,
+            date: date.toISOString().slice(0, 10),
+            calories: dto.calories || 0,
+            protein: dto.protein || 0,
+            carbs: dto.carbs || 0,
+            fat: dto.fat || 0,
+            rawText: dto.rawText || dto.description,
+          },
+        } as LifeHubEvent,
       },
     );
 

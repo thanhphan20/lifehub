@@ -5,6 +5,8 @@ export class WorkoutLog {
     public sets: number,
     public reps: number,
     public weight: number,
+    public enrichmentStatus?: string,
+    public syncDetails: any = {},
   ) {}
 
   toObject() {
@@ -14,6 +16,8 @@ export class WorkoutLog {
       sets: this.sets,
       reps: this.reps,
       weight: this.weight,
+      enrichmentStatus: this.enrichmentStatus,
+      syncDetails: this.syncDetails,
     };
   }
 }

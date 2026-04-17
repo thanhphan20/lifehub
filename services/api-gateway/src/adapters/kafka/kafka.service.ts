@@ -19,6 +19,40 @@ export class KafkaService {
     this.logger.log(`KafkaService initialized with broker: ${kafkaBroker}`);
   }
 
+  // ... (existing circuit breaker properties) ...
+
+  /**
+   * Subscribes to one or more topics.
+   */
+  async subscribe(groupId: string, topics: string[] | RegExp, onMessage: (payload: any) => Promise<void>) {
+    const consumer = this.kafka.consumer({ groupId });
+    await consumer.connect();
+
+    if (Array.isArray(topics)) {
+      for (const topic of topics) {
+        await consumer.subscribe({ topic, fromBeginning: false });
+      }
+    } else {
+      await consumer.subscribe({ topic: topics, fromBeginning: false });
+    }
+
+    await consumer.run({
+      eachMessage: async ({ topic, message }) => {
+        const value = message.value?.toString();
+        if (value) {
+          try {
+            const event = JSON.parse(value);
+            await onMessage(event);
+          } catch (err) {
+            this.logger.error(`Error processing message from ${topic}: ${err}`);
+          }
+        }
+      },
+    });
+
+    this.logger.log(`Subscribed to topics: ${topics} (group: ${groupId})`);
+  }
+
   // Circuit breaker state
   private failureCount = 0;
   private readonly failureThreshold = 3;

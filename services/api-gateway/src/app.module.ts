@@ -18,6 +18,7 @@ import { DailyModule } from "./daily/daily.module";
 import { ReadingModule } from "./reading/reading.module";
 import { LearningModule } from "./learning/learning.module";
 import { AnalyticsModule } from "./analytics/analytics.module";
+import { ApplicationModule } from "./application/application.module";
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { AnalyticsModule } from "./analytics/analytics.module";
     LearningModule,
     AnalyticsModule,
     MessagingModule,
+    ApplicationModule,
   ],
   controllers: [HealthController],
   providers: [

@@ -13,13 +13,18 @@ export class WorkoutRepository extends PrismaBaseRepository<WorkoutLog> {
   async createWithOutbox(dto: WorkoutLogDto, event: { eventType: string; payload: any }) {
     return this.prisma.$transaction(async (tx) => {
       const workout = await tx.workoutLog.create({
-        data: dto,
+        data: {
+          ...dto,
+          correlationId: event.payload.correlationId,
+          enrichmentStatus: dto.rawText ? "PENDING" : "NOT_REQUIRED",
+          rawText: dto.rawText,
+        },
       });
 
       await tx.outbox.create({
         data: {
           eventType: event.eventType,
-          payload: event.payload,
+          payload: { ...event.payload, id: workout.id },
           status: "PENDING",
         },
       });

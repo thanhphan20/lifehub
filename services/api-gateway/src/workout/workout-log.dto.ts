@@ -21,4 +21,8 @@ export class WorkoutLogDto {
   @IsNumber()
   @Min(1)
   weight: number;
+
+  @ApiProperty({ example: "3 sets of bench press", description: "Original natural language text", required: false })
+  @IsString()
+  rawText?: string;
 }

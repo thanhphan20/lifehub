@@ -7,6 +7,8 @@ export class MealLog {
     public protein: number,
     public carbs: number,
     public fat: number,
+    public enrichmentStatus?: string,
+    public syncDetails: any = {},
   ) {}
 
   toObject() {
@@ -18,6 +20,8 @@ export class MealLog {
       protein: this.protein,
       carbs: this.carbs,
       fat: this.fat,
+      enrichmentStatus: this.enrichmentStatus,
+      syncDetails: this.syncDetails,
     };
   }
 }
