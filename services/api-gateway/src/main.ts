@@ -10,33 +10,41 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
-  // Connect RabbitMQ microservice
-  const rabbitmqUrl = (configService.get<string>("RABBITMQ_URL") ||
-    "amqp://lifehub:lifehub_password@localhost:5672") as string;
+  const enableKafka = configService.get<string>("ENABLE_KAFKA") === "true";
+  const enableRabbit = configService.get<string>("ENABLE_RABBITMQ") === "true";
 
-  const kafkaBroker = configService.get<string>("KAFKA_BROKER") || "localhost:9094";
+  if (enableRabbit) {
+    const rabbitmqUrl =
+      configService.get<string>("RABBITMQ_URL") ||
+      "amqp://lifehub:lifehub_password@localhost:5672";
 
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.RMQ,
-    options: {
-      urls: [rabbitmqUrl],
-      queue: "workout-queue",
-      queueOptions: { durable: true },
-    },
-  });
-
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.KAFKA,
-    options: {
-      client: {
-        clientId: "api-gateway",
-        brokers: [kafkaBroker],
+    app.connectMicroservice<MicroserviceOptions>({
+      transport: Transport.RMQ,
+      options: {
+        urls: [rabbitmqUrl],
+        queue: "workout-queue",
+        queueOptions: { durable: true },
       },
-      consumer: {
-        groupId: "api-gateway-consumers",
+    });
+  }
+
+  if (enableKafka) {
+    const kafkaBroker =
+      configService.get<string>("KAFKA_BROKER") || "localhost:9094";
+
+    app.connectMicroservice<MicroserviceOptions>({
+      transport: Transport.KAFKA,
+      options: {
+        client: {
+          clientId: "api-gateway",
+          brokers: [kafkaBroker],
+        },
+        consumer: {
+          groupId: "api-gateway-consumers",
+        },
       },
-    },
-  });
+    });
+  }
 
   // HTTP API configuration
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
@@ -53,8 +61,7 @@ async function bootstrap() {
     .setDescription("API for logging workouts with Kafka and RabbitMQ integration")
     .setVersion("1.0")
     .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup("/api", app, document);
+  SwaggerModule.setup("/api", app, SwaggerModule.createDocument(app, config));
 
   // Start all microservices
   await app.startAllMicroservices();
@@ -67,5 +74,6 @@ async function bootstrap() {
   console.log(`Health check: http://localhost:${port}/health`);
   console.log(`RabbitMQ Management: http://localhost:15672`);
   console.log(`Kafka UI: http://localhost:8081`);
+  console.log(`[Brokers] Kafka=${enableKafka} | RabbitMQ=${enableRabbit}`);
 }
 bootstrap();

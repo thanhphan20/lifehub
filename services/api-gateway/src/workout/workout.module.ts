@@ -27,5 +27,6 @@ import { OutboxModule } from "../application/outbox/outbox.module";
       inject: [KafkaPublisher, RabbitMQPublisher],
     },
   ],
+  exports: [WorkoutRepository],
 })
 export class WorkoutModule {}

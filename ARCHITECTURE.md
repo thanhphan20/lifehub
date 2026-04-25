@@ -85,6 +85,26 @@ We achieve high consistency across distributed components via:
 
 ---
 
+## ⚠️ Deferred Modules (Not Yet Integrated)
+
+> [!NOTE]
+> The following modules exist in the codebase but are **not yet wired into the SAGA workflow**. They are excluded from the current architecture diagram and should not be treated as active consumers/producers on the Kafka bus.
+
+| Module | Status | Reason |
+|--------|--------|--------|
+| `mood` | 🚧 Stub only | No enrichment logic or Kafka topic defined. Schema exists but no event flow. |
+| `learning` | 🚧 Stub only | Controller scaffolded (`learning.controller.ts`) but not connected to any SAGA step. |
+| `reading` | 🚧 Stub only | No controller, service, or event topic wired up yet. |
+
+**Until these modules are promoted:**
+- Do **not** add them to Kafka topic conventions.
+- Do **not** include them in integration worker routing.
+- Do **not** reference them in `syncDetails` JSON keys.
+
+When ready to promote a module, follow the [Scalability](#scalability) pattern: subscribe to `v1.*.enriched.logged` and publish `v1.{module}.sync_completed`.
+
+---
+
 ## Scalability
 - **Horizontal**: Workers can be scaled independently based on load.
 - **Decoupled**: Adding a new downstream service (e.g., a "Health Connect" sync) only requires subscribing to `v1.*.enriched.logged`.

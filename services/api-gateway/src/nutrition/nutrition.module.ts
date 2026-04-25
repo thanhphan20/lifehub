@@ -8,5 +8,6 @@ import { NutritionixModule } from "../adapters/nutritionix/nutritionix.module";
   imports: [NutritionixModule],
   controllers: [NutritionController],
   providers: [NutritionService, NutritionRepository],
+  exports: [NutritionRepository],
 })
 export class NutritionModule {}
