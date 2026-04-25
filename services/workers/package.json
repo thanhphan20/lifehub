@@ -20,7 +20,7 @@
     "ioredis": "^5.8.2",
     "kafkajs": "^2.2.4",
     "pg": "^8.11.3",
-    "uuid": "^11.1.0",
+    "uuid": "^14.0.0",
     "winston": "^3.17.0"
   },
   "devDependencies": {
