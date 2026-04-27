@@ -6,11 +6,19 @@ import { v4 as uuidv4 } from "uuid";
 @Injectable()
 export class KafkaService {
   private readonly logger = new Logger(KafkaService.name);
-  private readonly kafka: Kafka;
+  private readonly kafka?: Kafka;
   private producer: Producer | null = null;
   private isConnected = false;
+  private readonly isEnabled: boolean;
 
   constructor(private readonly configService: ConfigService) {
+    this.isEnabled = this.configService.get<string>("ENABLE_KAFKA") === "true";
+    
+    if (!this.isEnabled) {
+      this.logger.warn("Kafka is disabled via ENABLE_KAFKA flag. All Kafka operations will be no-ops.");
+      return;
+    }
+
     const kafkaBroker = this.configService.get<string>("KAFKA_BROKER") || "localhost:9094";
     this.kafka = new Kafka({
       clientId: "api-gateway",
@@ -25,6 +33,10 @@ export class KafkaService {
    * Subscribes to one or more topics.
    */
   async subscribe(groupId: string, topics: string[] | RegExp, onMessage: (payload: any) => Promise<void>) {
+    if (!this.isEnabled || !this.kafka) {
+      this.logger.warn(`Skipping Kafka subscription for ${topics}: Kafka is disabled`);
+      return;
+    }
     const consumer = this.kafka.consumer({ groupId });
     await consumer.connect();
 
@@ -60,7 +72,10 @@ export class KafkaService {
   private circuitTimeout: ReturnType<typeof setTimeout> | null = null;
   private readonly openDuration = 30000; // 30 seconds
 
-  private async getProducer(): Promise<Producer> {
+  private async getProducer(): Promise<Producer | null> {
+    if (!this.isEnabled || !this.kafka) {
+      return null;
+    }
     if (!this.producer) {
       this.producer = this.kafka.producer();
     }
@@ -78,11 +93,16 @@ export class KafkaService {
    * @param correlationId - Optional correlation ID for tracing. If not provided, a new one is generated.
    */
   async publish(topic: string, message: any, correlationId?: string): Promise<void> {
+    if (!this.isEnabled) {
+      this.logger.debug(`Skipping Kafka publish to ${topic}: Kafka is disabled`);
+      return;
+    }
     if (this.circuitOpen) {
       this.logger.error("Circuit breaker is OPEN. Rejecting publish request.");
       throw new Error("Kafka circuit breaker is open. Try again later.");
     }
     const producer = await this.getProducer();
+    if (!producer) return;
     const cid = correlationId || uuidv4();
     const messageObj: Message = {
       value: JSON.stringify(message),

@@ -14,10 +14,18 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
   private readonly maxReconnectAttempts = 10;
   private readonly reconnectDelay = 5000;
 
-  constructor(private readonly configService: ConfigService) {}
+  private readonly isEnabled: boolean;
+  
+  constructor(private readonly configService: ConfigService) {
+    this.isEnabled = this.configService.get<string>("ENABLE_RABBITMQ") === "true";
+  }
 
   async onModuleInit() {
-    await this.connect();
+    if (this.isEnabled) {
+      await this.connect();
+    } else {
+      this.logger.warn("RabbitMQ is disabled via ENABLE_RABBITMQ flag. All RabbitMQ operations will be no-ops.");
+    }
   }
 
   async onModuleDestroy() {
@@ -170,6 +178,10 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
    * @param options - Optional publish options.
    */
   async publish(queue: string, message: any, options?: amqp.Options.Publish): Promise<void> {
+    if (!this.isEnabled) {
+      this.logger.debug(`Skipping RabbitMQ publish to ${queue}: RabbitMQ is disabled`);
+      return;
+    }
     try {
       const channel = await this.ensurePublishChannel();
       await channel.assertQueue(queue, { durable: true });
@@ -215,6 +227,10 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
     message: any,
     exchangeType: "direct" | "topic" | "fanout" | "headers" = "topic",
   ): Promise<void> {
+    if (!this.isEnabled) {
+      this.logger.debug(`Skipping RabbitMQ publish to exchange ${exchange}: RabbitMQ is disabled`);
+      return;
+    }
     try {
       const channel = await this.ensurePublishChannel();
       await channel.assertExchange(exchange, exchangeType, { durable: true });
@@ -254,6 +270,10 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
       deadLetterExchange?: string;
     },
   ): Promise<void> {
+    if (!this.isEnabled) {
+      this.logger.warn(`Skipping RabbitMQ consumption from ${queue}: RabbitMQ is disabled`);
+      return;
+    }
     if (!this.connection) {
       throw new Error("RabbitMQ connection not established");
     }
