@@ -13,7 +13,7 @@ export class KafkaService {
 
   constructor(private readonly configService: ConfigService) {
     this.isEnabled = this.configService.get<string>("ENABLE_KAFKA") === "true";
-    
+
     if (!this.isEnabled) {
       this.logger.warn("Kafka is disabled via ENABLE_KAFKA flag. All Kafka operations will be no-ops.");
       return;
