@@ -15,7 +15,7 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
   private readonly reconnectDelay = 5000;
 
   private readonly isEnabled: boolean;
-  
+
   constructor(private readonly configService: ConfigService) {
     this.isEnabled = this.configService.get<string>("ENABLE_RABBITMQ") === "true";
   }

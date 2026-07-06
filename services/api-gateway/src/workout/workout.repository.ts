@@ -7,11 +7,11 @@ import { PrismaBaseRepository } from "../application/prisma-base.repository";
 @Injectable()
 export class WorkoutRepository extends PrismaBaseRepository<WorkoutLog> {
   constructor(private prisma: PrismaService) {
-    super(prisma.workoutLog);
+    super((prisma as any).workoutLog);
   }
 
   async createWithOutbox(dto: WorkoutLogDto, event: { eventType: string; payload: any }) {
-    return this.prisma.$transaction(async (tx) => {
+    return (this.prisma as any).$transaction(async (tx: any) => {
       const workout = await tx.workoutLog.create({
         data: {
           ...dto,
@@ -34,7 +34,7 @@ export class WorkoutRepository extends PrismaBaseRepository<WorkoutLog> {
   }
 
   async getStatsByPeriod(startDate: Date, endDate: Date) {
-    const logs = await this.prisma.workoutLog.findMany({
+    const logs = await (this.prisma as any).workoutLog.findMany({
       where: {
         createdAt: {
           gte: startDate,
@@ -62,8 +62,8 @@ export class WorkoutRepository extends PrismaBaseRepository<WorkoutLog> {
       totalVolume: number;
     }
 
-    const totals = logs.reduce<WorkoutTotals>(
-      (acc, log) => {
+    const totals: WorkoutTotals = (logs as any[]).reduce(
+      (acc: WorkoutTotals, log: any) => {
         const volume = log.sets * log.reps * log.weight;
         return {
           count: acc.count + 1,

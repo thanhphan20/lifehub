@@ -14,9 +14,7 @@ async function bootstrap() {
   const enableRabbit = configService.get<string>("ENABLE_RABBITMQ") === "true";
 
   if (enableRabbit) {
-    const rabbitmqUrl =
-      configService.get<string>("RABBITMQ_URL") ||
-      "amqp://lifehub:lifehub_password@localhost:5672";
+    const rabbitmqUrl = configService.get<string>("RABBITMQ_URL") || "amqp://lifehub:lifehub_password@localhost:5672";
 
     app.connectMicroservice<MicroserviceOptions>({
       transport: Transport.RMQ,
@@ -29,8 +27,7 @@ async function bootstrap() {
   }
 
   if (enableKafka) {
-    const kafkaBroker =
-      configService.get<string>("KAFKA_BROKER") || "localhost:9094";
+    const kafkaBroker = configService.get<string>("KAFKA_BROKER") || "localhost:9094";
 
     app.connectMicroservice<MicroserviceOptions>({
       transport: Transport.KAFKA,
