@@ -10,6 +10,25 @@ LifeHub is a high-performance life-logging system that simplifies the tracking o
 
 ---
 
+## Architecture
+
+```mermaid
+flowchart LR
+    Client([Client]) -->|HTTP request| Gateway[API Gateway]
+    Gateway -->|persists| DB[(PostgreSQL)]
+    Gateway -->|publishes event| Kafka{{Kafka}}
+    Kafka -->|consumes| Workers[Workers]
+    Workers -->|idempotency lock| Redis[(Redis)]
+    Gateway -->|legacy tasks| RabbitMQ{{RabbitMQ}}
+```
+
+- The **API Gateway** (NestJS) handles client requests and is the source of truth, writing records to **PostgreSQL** before anything else happens.
+- For the async SAGA flow, the Gateway publishes events to **Kafka**; the **Workers** service consumes them to enrich data and sync to external systems (Notion, analytics).
+- **Redis** provides a global idempotency lock so each event is only processed once, even under retries.
+- **RabbitMQ** carries legacy, non-SAGA integration tasks (e.g. Strava) outside the Kafka event flow.
+
+---
+
 ## 📁 Project Structure
 
 ```
