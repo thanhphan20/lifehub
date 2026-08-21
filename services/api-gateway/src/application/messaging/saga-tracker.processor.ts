@@ -1,7 +1,9 @@
 import { Injectable, OnModuleInit, Logger } from "@nestjs/common";
+import { Cron } from "@nestjs/schedule";
 import { KafkaService } from "../../adapters/kafka/kafka.service";
 import { NutritionRepository } from "../../nutrition/nutrition.repository";
 import { WorkoutRepository } from "../../workout/workout.repository";
+import { InboxService } from "../inbox/inbox.service";
 import { EventType, LifeHubEvent, EventDomain } from "./events";
 
 @Injectable()
@@ -12,6 +14,7 @@ export class SagaTrackerProcessor implements OnModuleInit {
     private readonly kafkaService: KafkaService,
     private readonly nutritionRepo: NutritionRepository,
     private readonly workoutRepo: WorkoutRepository,
+    private readonly inboxService: InboxService,
   ) {}
 
   async onModuleInit() {
@@ -30,6 +33,27 @@ export class SagaTrackerProcessor implements OnModuleInit {
   }
 
   private async handleEvent(event: LifeHubEvent) {
+    if (!event.msgId) {
+      this.logger.warn("Event without msgId, skipping inbox dedup");
+      return;
+    }
+
+    const { inboxId, duplicate } = await this.inboxService.claim(event.msgId, event.type, event);
+    if (duplicate) {
+      this.logger.log(`duplicate, skipping msgId=${event.msgId}`);
+      return;
+    }
+
+    try {
+      await this.processEvent(event);
+      if (inboxId) await this.inboxService.markCompleted(inboxId);
+    } catch (err) {
+      if (inboxId) await this.inboxService.markFailed(inboxId);
+      throw err;
+    }
+  }
+
+  private async processEvent(event: LifeHubEvent) {
     const { type, domain, data } = event;
     const { id } = data;
 
@@ -93,6 +117,28 @@ export class SagaTrackerProcessor implements OnModuleInit {
         const syncDetails = (workout.syncDetails as any) || {};
         syncDetails[source] = status;
         await this.workoutRepo.update(id, { syncDetails });
+      }
+    }
+  }
+
+  @Cron("*/1 * * * *")
+  async retryFailed() {
+    const rows = await this.inboxService.getFailedForRetry();
+
+    if (rows.length === 0) {
+      return;
+    }
+
+    this.logger.debug(`Retrying ${rows.length} failed inbox messages`);
+
+    for (const row of rows) {
+      const event = row.payload as unknown as LifeHubEvent;
+      try {
+        await this.processEvent(event);
+        await this.inboxService.markCompleted(row.id);
+      } catch (err: any) {
+        await this.inboxService.markFailed(row.id);
+        this.logger.error(`Retry failed for inbox message ${row.id}: ${err.message}`, err.stack);
       }
     }
   }

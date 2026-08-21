@@ -175,6 +175,27 @@ enum OutboxStatus {
   FAILED
 }
 
+model InboxMessage {
+  id          String       @id @default(uuid())
+  msgId       String       @unique @db.VarChar(255)
+  eventType   String
+  payload     Json
+  status      InboxStatus  @default(PROCESSING)
+  retries     Int          @default(0)
+  processedAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([status, createdAt])
+  @@map("inbox")
+}
+
+enum InboxStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 enum EnrichmentStatus {
   NOT_REQUIRED
   PENDING
