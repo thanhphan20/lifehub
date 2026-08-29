@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { DailyRepository } from "./daily.repository";
-import { AddTodoDto, UpdateTodoStatusDto, AddDailySummaryDto } from "./daily.dto";
-import { DailyTodo } from "./daily.entity";
+import { AddTodoDto, UpdateTodoStatusDto, AddDailySummaryDto, AddDailyLogDto } from "./daily.dto";
+import { DailyLog, DailyTodo } from "./daily.entity";
+import { EventType, EventDomain, LifeHubEvent } from "../application/messaging/events";
 import { v4 as uuidv4 } from "uuid";
 
 @Injectable()
@@ -12,6 +13,20 @@ export class DailyService {
     const date = dateStr ? new Date(dateStr) : new Date();
     date.setHours(0, 0, 0, 0);
     return date;
+  }
+
+  // ponytail: repository stores todos/logs as JSONB strings; read path must parse them back to arrays
+  private asArray<T>(value: unknown): T[] {
+    if (Array.isArray(value)) return value as T[];
+    if (typeof value === "string") {
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? (parsed as T[]) : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
   }
 
   private async getOrCreate(date: Date) {
@@ -30,7 +45,7 @@ export class DailyService {
       status: "pending",
     };
 
-    const todos = Array.isArray(entry.todos) ? [...(entry.todos as unknown as DailyTodo[]), todo] : [todo];
+    const todos = [...this.asArray<DailyTodo>(entry.todos), todo];
     await this.dailyRepo.updateTodos(date, todos);
 
     return { date: date.toISOString().slice(0, 10), todo };
@@ -41,7 +56,7 @@ export class DailyService {
     const entry = await this.dailyRepo.findByDate(date);
     if (!entry) throw new NotFoundException("Daily entry not found for date");
 
-    const todos = Array.isArray(entry.todos) ? (entry.todos as unknown as DailyTodo[]) : [];
+    const todos = this.asArray<DailyTodo>(entry.todos);
     const updatedTodos = todos.map((t) => (t.id === dto.todoId ? { ...t, status: dto.status } : t));
 
     const found = updatedTodos.some((t) => t.id === dto.todoId);
@@ -58,12 +73,47 @@ export class DailyService {
     return { date: date.toISOString().slice(0, 10), summary: dto.summary };
   }
 
+  async addLog(dto: AddDailyLogDto) {
+    const date = this.normalizeDate(dto.date);
+    const entry = await this.getOrCreate(date);
+
+    const existing = this.asArray<DailyLog>(entry.logs);
+    const log: DailyLog = { id: uuidv4(), text: dto.text, createdAt: new Date().toISOString() };
+
+    const correlationId = uuidv4();
+    await this.dailyRepo.createLogWithOutbox(
+      date,
+      log,
+      existing,
+      {
+        eventType: `v1.${EventDomain.DAILY}.${EventType.RAW_INGEST}`,
+        payload: {
+          version: 1,
+          msgId: uuidv4(),
+          correlationId,
+          timestamp: new Date().toISOString(),
+          domain: EventDomain.DAILY,
+          type: EventType.RAW_INGEST,
+          data: {
+            id: "",
+            logId: log.id,
+            text: dto.text,
+            date: date.toISOString().slice(0, 10),
+          },
+        } as LifeHubEvent,
+      },
+    );
+
+    return { date: date.toISOString().slice(0, 10), log };
+  }
+
   async getDaily(dateStr?: string) {
     const date = this.normalizeDate(dateStr);
     const entry = await this.getOrCreate(date);
     return {
       date: date.toISOString().slice(0, 10),
-      todos: entry.todos || [],
+      todos: this.asArray<DailyTodo>(entry.todos),
+      logs: this.asArray<DailyLog>(entry.logs),
       summary: entry.summary,
     };
   }

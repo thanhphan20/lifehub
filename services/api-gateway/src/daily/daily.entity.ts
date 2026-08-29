@@ -6,11 +6,18 @@ export interface DailyTodo {
   status: TodoStatus;
 }
 
+export interface DailyLog {
+  id: string;
+  text: string;
+  createdAt: string;
+}
+
 export class DailyEntry {
   constructor(
     public readonly id: string,
     public date: Date,
     public todos: DailyTodo[],
+    public logs: DailyLog[],
     public summary: string | null,
   ) {}
 
@@ -19,6 +26,7 @@ export class DailyEntry {
       id: this.id,
       date: this.date,
       todos: this.todos,
+      logs: this.logs,
       summary: this.summary,
     };
   }
