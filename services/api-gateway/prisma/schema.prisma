@@ -82,6 +82,7 @@ model DailyEntry {
   id        String   @id @default(uuid())
   date      DateTime
   todos     Json // Array of { id, text, status: 'pending' | 'done' | 'skipped' }
+  logs      Json     @default("[]") // Array of { id, text, createdAt }
   summary   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

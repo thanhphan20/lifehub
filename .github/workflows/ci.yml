@@ -16,6 +16,21 @@ jobs:
     defaults:
       run:
         working-directory: services/api-gateway
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/lifehub?schema=public
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: lifehub
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v6
 
@@ -45,6 +60,12 @@ jobs:
 
       - name: Test (Unit)
         run: pnpm run test
+
+      - name: Setup database (e2e)
+        run: pnpm exec prisma db push --skip-generate
+
+      - name: Test (E2E)
+        run: pnpm run test:e2e
 
   workers:
     name: LifeHub Workers

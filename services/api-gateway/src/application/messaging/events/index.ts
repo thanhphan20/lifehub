@@ -37,6 +37,7 @@ export enum EventDomain {
   NUTRITION = "nutrition",
   WORKOUT = "workout",
   MOOD = "mood",
+  DAILY = "daily",
   SYSTEM = "system",
 }
 

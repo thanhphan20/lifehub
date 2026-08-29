@@ -40,3 +40,15 @@ export class AddDailySummaryDto {
   @IsDateString()
   date?: string;
 }
+
+export class AddDailyLogDto {
+  @ApiProperty({ example: "Ran 5k, 2 protein shakes, focused deep-work block.", description: "Free-text daily activity log line." })
+  @IsString()
+  @IsNotEmpty()
+  text: string;
+
+  @ApiPropertyOptional({ example: "2025-01-15", description: "Date (YYYY-MM-DD). Defaults to today if omitted." })
+  @IsOptional()
+  @IsDateString()
+  date?: string;
+}
