@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { NutritionRepository } from "../nutrition/nutrition.repository";
 import { WorkoutRepository } from "../workout/workout.repository";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 
 export interface UnifiedIngestDto {
   text?: string;
@@ -21,7 +21,7 @@ export class UnifiedIngestService {
   ) {}
 
   async ingest(dto: UnifiedIngestDto) {
-    const correlationId = uuidv4();
+    const correlationId = randomUUID();
     this.logger.log(`[UnifiedIngest] Starting ingest with correlationId: ${correlationId}`);
 
     const results: any[] = [];
@@ -42,7 +42,7 @@ export class UnifiedIngestService {
           eventType: `v1.nutrition.raw.ingest`,
           payload: {
             version: 1,
-            msgId: uuidv4(),
+            msgId: randomUUID(),
             correlationId,
             timestamp: new Date().toISOString(),
             domain: "nutrition",
@@ -62,7 +62,7 @@ export class UnifiedIngestService {
             eventType: `v1.nutrition.enriched.logged`, // Skip worker if already structured
             payload: {
               version: 1,
-              msgId: uuidv4(),
+              msgId: randomUUID(),
               correlationId,
               timestamp: new Date().toISOString(),
               domain: "nutrition",
@@ -76,7 +76,7 @@ export class UnifiedIngestService {
             eventType: `v1.workout.enriched.logged`,
             payload: {
               version: 1,
-              msgId: uuidv4(),
+              msgId: randomUUID(),
               correlationId,
               timestamp: new Date().toISOString(),
               domain: "workout",

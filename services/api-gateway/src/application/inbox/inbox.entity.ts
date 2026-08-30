@@ -1,9 +1,9 @@
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 import { InboxStatus } from "../../generated/client";
 
 export class InboxMessage {
   constructor(
-    public readonly id: string = uuidv4(),
+    public readonly id: string = randomUUID(),
     public readonly msgId: string,
     public readonly eventType: string,
     public readonly payload: any,

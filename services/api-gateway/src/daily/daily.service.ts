@@ -3,7 +3,7 @@ import { DailyRepository } from "./daily.repository";
 import { AddTodoDto, UpdateTodoStatusDto, AddDailySummaryDto, AddDailyLogDto } from "./daily.dto";
 import { DailyLog, DailyTodo } from "./daily.entity";
 import { EventType, EventDomain, LifeHubEvent } from "../application/messaging/events";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 
 @Injectable()
 export class DailyService {
@@ -40,7 +40,7 @@ export class DailyService {
     const entry = await this.getOrCreate(date);
 
     const todo: DailyTodo = {
-      id: uuidv4(),
+      id: randomUUID(),
       text: dto.text,
       status: "pending",
     };
@@ -78,9 +78,9 @@ export class DailyService {
     const entry = await this.getOrCreate(date);
 
     const existing = this.asArray<DailyLog>(entry.logs);
-    const log: DailyLog = { id: uuidv4(), text: dto.text, createdAt: new Date().toISOString() };
+    const log: DailyLog = { id: randomUUID(), text: dto.text, createdAt: new Date().toISOString() };
 
-    const correlationId = uuidv4();
+    const correlationId = randomUUID();
     await this.dailyRepo.createLogWithOutbox(
       date,
       log,
@@ -89,7 +89,7 @@ export class DailyService {
         eventType: `v1.${EventDomain.DAILY}.${EventType.RAW_INGEST}`,
         payload: {
           version: 1,
-          msgId: uuidv4(),
+          msgId: randomUUID(),
           correlationId,
           timestamp: new Date().toISOString(),
           domain: EventDomain.DAILY,

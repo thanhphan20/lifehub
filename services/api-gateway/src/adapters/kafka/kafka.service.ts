@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Kafka, Producer, Message } from "kafkajs";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 
 @Injectable()
 export class KafkaService {
@@ -103,7 +103,7 @@ export class KafkaService {
     }
     const producer = await this.getProducer();
     if (!producer) return;
-    const cid = correlationId || uuidv4();
+    const cid = correlationId || randomUUID();
     const messageObj: Message = {
       value: JSON.stringify(message),
       headers: {

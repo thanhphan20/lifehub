@@ -1,11 +1,11 @@
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 import { OutboxStatus } from "../../generated/client";
 
 export class OutboxMessage {
   constructor(
     public readonly eventType: string,
     public readonly payload: any,
-    public readonly id: string = uuidv4(),
+    public readonly id: string = randomUUID(),
     public status: OutboxStatus = OutboxStatus.PENDING,
     public retries: number = 0,
     public createdAt: Date = new Date(),

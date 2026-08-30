@@ -3,7 +3,7 @@ import { NutritionRepository } from "./nutrition.repository";
 import { RedisService } from "../adapters/redis/redis.service";
 import { CreateMealDto } from "./nutrition.dto";
 import { EventType, EventDomain, LifeHubEvent } from "../application/messaging/events";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 
 @Injectable()
 export class NutritionService {
@@ -16,7 +16,7 @@ export class NutritionService {
   ) {}
 
   async logMeal(dto: CreateMealDto, correlationId?: string) {
-    const cid = correlationId || uuidv4();
+    const cid = correlationId || randomUUID();
     const date = dto.date ? new Date(dto.date) : new Date();
 
     // If structured data is provided, we can skip the enrichment worker
@@ -36,7 +36,7 @@ export class NutritionService {
         eventType: isEnriched ? `v1.nutrition.${EventType.ENRICHED_LOGGED}` : `v1.nutrition.${EventType.RAW_INGEST}`,
         payload: {
           version: 1,
-          msgId: uuidv4(),
+          msgId: randomUUID(),
           correlationId: cid,
           timestamp: new Date().toISOString(),
           domain: EventDomain.NUTRITION,

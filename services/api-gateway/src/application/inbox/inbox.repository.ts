@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 import { PrismaService } from "../../prisma/prisma.service";
 import { InboxMessage } from "./inbox.entity";
 import { PrismaBaseRepository } from "../prisma-base.repository";
@@ -13,7 +13,7 @@ export class InboxRepository extends PrismaBaseRepository<InboxMessageRecord> {
 
   async createIfAbsent(msgId: string, eventType: string, payload: unknown): Promise<InboxMessage> {
     try {
-      const message = new InboxMessage(uuidv4(), msgId, eventType, payload);
+      const message = new InboxMessage(randomUUID(), msgId, eventType, payload);
       const record = await super.create(message.toPrisma());
       return InboxMessage.fromDb(record);
     } catch (error) {
